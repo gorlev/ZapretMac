@@ -21,6 +21,10 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
     public var methodEOL = false
     public var methodSpace = false
     public var unixEOL = false
+    /// --hostspell, the exact 4-letter spelling of "Host", e.g. "hoSt". Empty means "host".
+    public var hostSpell = ""
+    /// --hostpad, bytes of dummy headers before Host:, e.g. "1024". Empty means none.
+    public var hostPad = ""
 
     /// --filter-tcp, e.g. "80,443". Empty means every port.
     public var tcpPorts = ""
@@ -47,6 +51,8 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
         ("--split-pos", \.splitPositions),
         ("--tlsrec", \.tlsRecord),
         ("--filter-tcp", \.tcpPorts),
+        ("--hostspell", \.hostSpell),
+        ("--hostpad", \.hostPad),
     ]
 
     /// The tpws flags, in a stable order.
@@ -56,6 +62,8 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
         if !tlsRecord.trimmed.isEmpty { out.append("--tlsrec=\(tlsRecord.compact)") }
         if !splitPositions.trimmed.isEmpty { out.append("--split-pos=\(splitPositions.compact)") }
         for (flag, path) in Self.flags where self[keyPath: path] { out.append(flag) }
+        if !hostSpell.trimmed.isEmpty { out.append("--hostspell=\(hostSpell.trimmed)") }
+        if !hostPad.trimmed.isEmpty { out.append("--hostpad=\(hostPad.compact)") }
         out.append(contentsOf: extra)
         return out
     }
@@ -90,11 +98,49 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
         if !splitPositions.trimmed.isEmpty { parts.append(String(localized: "Split at \(splitPositions.compact)", bundle: .main)) }
         if disorder { parts.append(String(localized: "Disorder", bundle: .main)) }
         if oob { parts.append(String(localized: "OOB byte", bundle: .main)) }
-        let http = [hostCase, domainCase, hostDot, hostTab, hostNoSpace, methodEOL, methodSpace, unixEOL]
+        let http = [hostCase, domainCase, hostDot, hostTab, hostNoSpace, methodEOL, methodSpace, unixEOL,
+                    !hostSpell.trimmed.isEmpty, !hostPad.trimmed.isEmpty]
             .filter { $0 }.count
         if http > 0 { parts.append(String(localized: "\(http) HTTP tricks", bundle: .main)) }
         if !extra.isEmpty { parts.append(String(localized: "+\(extra.count) more", bundle: .main)) }
         return parts.isEmpty ? String(localized: "No changes to traffic", bundle: .main) : parts.joined(separator: " · ")
+    }
+}
+
+/// A setting that tpws accepts but that does not work on macOS.
+public enum MacWarning: Equatable, Sendable {
+    /// --oob and --disorder together: macOS resends the out-of-band byte
+    /// without the urgent flag, which corrupts the stream. zapret's
+    /// blockcheck.sh tests this pair on Linux only.
+    case oobWithDisorder
+    /// A flag that only does something on Linux, such as --mss or --fix-seg.
+    case linuxOnly(flag: String)
+
+    public var message: String {
+        switch self {
+        case .oobWithDisorder:
+            String(localized: "On a Mac, an out-of-band byte and disorder together break connections. Turn on only one of them.", bundle: .main)
+        case .linuxOnly(let flag):
+            String(localized: "\(flag) only works on Linux. On a Mac it does nothing.", bundle: .main)
+        }
+    }
+}
+
+extension StrategyOptions {
+    /// Flags tpws accepts on macOS that only work on Linux.
+    static let linuxOnlyFlags = ["--mss", "--fix-seg"]
+
+    /// What in these options does not work on macOS, in form order.
+    public var macOSWarnings: [MacWarning] {
+        var out: [MacWarning] = []
+        if oob && disorder { out.append(.oobWithDisorder) }
+        for arg in extra {
+            let name = String(arg.split(separator: "=", maxSplits: 1).first ?? "")
+            if Self.linuxOnlyFlags.contains(name), !out.contains(.linuxOnly(flag: name)) {
+                out.append(.linuxOnly(flag: name))
+            }
+        }
+        return out
     }
 }
 

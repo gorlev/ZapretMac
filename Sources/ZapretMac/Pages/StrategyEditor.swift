@@ -22,6 +22,8 @@ struct StrategyEditor: View {
         return o
     }
 
+    private var warnings: [MacWarning] { options.macOSWarnings }
+
     var body: some View {
         VStack(spacing: 0) {
             Form {
@@ -35,6 +37,7 @@ struct StrategyEditor: View {
                         .help("Cut the TLS hello into two records at this position.")
                     Toggle("Send pieces out of order (disorder)", isOn: $draft.options.disorder)
                     Toggle("Add an out-of-band byte (oob)", isOn: $draft.options.oob)
+                    ForEach(warnings.filter { $0 == .oobWithDisorder }, id: \.message) { MacWarningNote(warning: $0) }
                     Toggle("Split every protocol, not only HTTP and TLS", isOn: $draft.options.splitAnyProtocol)
                 } header: {
                     Text("Splitting")
@@ -61,16 +64,21 @@ struct StrategyEditor: View {
                             Toggle("Unix line endings", isOn: $draft.options.unixEOL)
                         }
                     }
+                    TextField("Host spelling (4 letters)",text: $draft.options.hostSpell, prompt: Text("hoSt"))
+                        .help("Write the Host header with exactly these 4 letters, for example hoSt. Leave empty for the normal spelling.")
+                    TextField("Padding before Host (bytes)", text: $draft.options.hostPad, prompt: Text("1024"))
+                        .help("Add this many bytes of dummy headers before the Host header, so the filter gives up before it reaches the site name.")
                 }
                 Section {
                     TextField("Only these ports", text: $draft.options.tcpPorts, prompt: Text("80,443"))
                     LabeledContent("More tpws flags") {
-                        TextField("More tpws flags", text: $extraText, prompt: Text("--mss=88"), axis: .vertical)
+                        TextField("More tpws flags", text: $extraText, prompt: Text("--tamper-cutoff=n2"), axis: .vertical)
                             .labelsHidden()
                             .font(.body.monospaced())
                             .multilineTextAlignment(.trailing)
                             .lineLimit(1...3)
                     }
+                    ForEach(warnings.filter { $0 != .oobWithDisorder }, id: \.message) { MacWarningNote(warning: $0) }
                 } header: {
                     Text("Advanced")
                 } footer: {
@@ -138,5 +146,17 @@ struct StrategyEditor: View {
             check = (result.ok, message)
             checking = false
         }
+    }
+}
+
+/// An orange note under a control whose setting does not work on macOS.
+private struct MacWarningNote: View {
+    let warning: MacWarning
+
+    var body: some View {
+        Label(warning.message, systemImage: "exclamationmark.triangle.fill")
+            .font(.callout)
+            .foregroundStyle(.orange)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }

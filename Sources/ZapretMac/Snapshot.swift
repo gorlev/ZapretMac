@@ -45,7 +45,7 @@ enum Snapshot {
                 for mode in ["light", "dark"] {
                     NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
                     model.sidebar = .strategies
-                    model.newStrategy(from: StrategyOptions(commandLine: "--tlsrec=sniext+1 --split-pos=1,midsld --disorder"),
+                    model.newStrategy(from: StrategyOptions(commandLine: "--split-pos=1,midsld --oob --disorder"),
                                       name: "My Provider")
                     try? await Task.sleep(for: .seconds(1))
                     capture(to: "\(dir)/editor-\(mode).png", window: main?.attachedSheet)
