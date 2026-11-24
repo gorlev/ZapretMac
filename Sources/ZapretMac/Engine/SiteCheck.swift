@@ -34,10 +34,11 @@ enum SiteCheck {
         return await Result(direct: direct, throughZapret: nil)
     }
 
-    nonisolated static func fetch(_ url: URL, socksPort: Int?) async -> Outcome {
+    /// `timeout` is how long to wait for an answer; the whole load gets 2 s more.
+    nonisolated static func fetch(_ url: URL, socksPort: Int?, timeout: TimeInterval = 8) async -> Outcome {
         let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 8
-        config.timeoutIntervalForResource = 10
+        config.timeoutIntervalForRequest = timeout
+        config.timeoutIntervalForResource = timeout + 2
         config.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         // An empty dictionary means no proxy at all, not even the system one.
         if let socksPort {

@@ -11,25 +11,38 @@ final class StrategyFinder {
     private(set) var direct: SiteCheck.Outcome?
     private(set) var isRunning = false
     private(set) var site = ""
+    private(set) var depth: ScanDepth = .quick
     private var task: Task<Void, Never>?
+    /// Bumped on every start, so a stopped run never touches the next one.
+    private var run = 0
 
     var ranked: [Trial] { Trial.ranked(trials) }
     var isDone: Bool { !isRunning && !trials.isEmpty && trials.allSatisfy { $0.status != .waiting && $0.status != .testing } }
     var workingCount: Int { trials.filter(\.works).count }
+    var finishedCount: Int { trials.filter { $0.status != .waiting && $0.status != .testing }.count }
+    /// Stopped before every try had a result.
+    var isStopped: Bool { !isRunning && !trials.isEmpty && !isDone }
 
-    func start(url: URL, strategies: [(id: String, name: String, arguments: [String])]) {
+    /// `timeout` is how long each try waits for the site.
+    func start(url: URL, strategies: [(id: String, name: String, arguments: [String])],
+               depth: ScanDepth = .quick, timeout: TimeInterval = 8) {
         stop()
+        run += 1
+        let current = run
         site = url.host ?? url.absoluteString
+        self.depth = depth
         trials = strategies.map { Trial(id: $0.id, name: $0.name, arguments: $0.arguments) }
         direct = nil
         isRunning = true
         task = Task {
-            direct = await SiteCheck.fetch(url, socksPort: nil)
+            let outcome = await SiteCheck.fetch(url, socksPort: nil, timeout: timeout)
+            guard !Task.isCancelled, run == current else { return }
+            direct = outcome
             for index in trials.indices {
-                if Task.isCancelled { break }
+                if Task.isCancelled || run != current { return }
                 trials[index].status = .testing
-                let status = await Self.trial(url: url, arguments: trials[index].arguments)
-                if Task.isCancelled { trials[index].status = .waiting; break }
+                let status = await Self.trial(url: url, arguments: trials[index].arguments, timeout: timeout)
+                if Task.isCancelled || run != current { return }
                 trials[index].status = status
             }
             isRunning = false
@@ -50,7 +63,7 @@ final class StrategyFinder {
     }
 
     /// Starts tpws with one strategy, opens the site through it, stops tpws.
-    nonisolated static func trial(url: URL, arguments: [String]) async -> Trial.Status {
+    nonisolated static func trial(url: URL, arguments: [String], timeout: TimeInterval = 8) async -> Trial.Status {
         guard let port = freePort() else { return .fails(String(localized: "No free port")) }
         let command = TPWSCommand(port: port, strategy: arguments, scope: .allSites, debug: false)
         let process = Process()
@@ -69,7 +82,8 @@ final class StrategyFinder {
             try? await Task.sleep(for: .milliseconds(50))
         }
         guard process.isRunning else { return .fails(String(localized: "tpws refused these flags")) }
-        switch await SiteCheck.fetch(url, socksPort: port) {
+        if Task.isCancelled { return .waiting }
+        switch await SiteCheck.fetch(url, socksPort: port, timeout: timeout) {
         case .ok(_, let ms): return .works(milliseconds: ms)
         case .failed(let reason): return .fails(reason)
         }

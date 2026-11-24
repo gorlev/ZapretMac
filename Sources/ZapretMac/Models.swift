@@ -89,6 +89,8 @@ final class AppModel {
     let proxy: SystemProxy
     let finder = StrategyFinder()
     var showFinder = false
+    /// Quick tries the strategies; Thorough runs blockcheck's tpws matrix.
+    var finderDepth: ScanDepth = .quick
     /// The page reopens where it was left. Test and snapshot runs start on Overview.
     var sidebar: SidebarItem? = Store.isOverridden ? .overview
         : SidebarItem(rawValue: UserDefaults.standard.string(forKey: "sidebar.page") ?? "") ?? .overview {
@@ -335,11 +337,20 @@ final class AppModel {
         showFinder = true
     }
 
-    /// Every built-in strategy, then the user's own.
-    func startFinder(url: URL) {
-        var list = Preset.all.map { (id: "preset:\($0.id)", name: $0.name, arguments: $0.options.arguments) }
-        list += customStrategies().map { (id: $0.selectionID, name: $0.name, arguments: $0.options.arguments) }
-        finder.start(url: url, strategies: list)
+    /// Quick: every built-in strategy, then the user's own. Thorough:
+    /// blockcheck's tpws matrix for the address, with a shorter wait per try.
+    func startFinder(url: URL, depth: ScanDepth? = nil) {
+        let depth = depth ?? finderDepth
+        finderDepth = depth
+        switch depth {
+        case .quick:
+            var list = Preset.all.map { (id: "preset:\($0.id)", name: $0.name, arguments: $0.options.arguments) }
+            list += customStrategies().map { (id: $0.selectionID, name: $0.name, arguments: $0.options.arguments) }
+            finder.start(url: url, strategies: list, depth: .quick)
+        case .thorough:
+            let list = ScanPlan.tries(for: url).map { (id: $0.id, name: $0.name, arguments: $0.arguments) }
+            finder.start(url: url, strategies: list, depth: .thorough, timeout: 6)
+        }
     }
 
     // MARK: - Login item

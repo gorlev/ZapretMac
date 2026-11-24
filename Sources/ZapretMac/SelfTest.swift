@@ -113,6 +113,21 @@ enum SelfTest {
                 for _ in 0..<30 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
             }
 
+            // S-090
+            // A thorough scan runs blockcheck's tpws matrix beside the bypass.
+            let beforeScan = model.engine.commandLine
+            if let url = URL(string: "https://example.com") {
+                model.startFinder(url: url, depth: .thorough)
+                check("a thorough scan of an https address has 39 tries", model.finder.trials.count == 39, "\(model.finder.trials.count)")
+                for _ in 0..<900 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
+            }
+            check("a thorough scan finishes", model.finder.isDone && !model.finder.isRunning, "\(model.finder.finishedCount) done")
+            check("every scan try has a result", model.finder.trials.allSatisfy { $0.isScan && $0.status != .waiting && $0.status != .testing })
+            check("at least one scan try opens example.com", model.finder.workingCount > 0)
+            check("the bypass keeps running through a thorough scan",
+                  model.engine.state == .running && model.engine.commandLine == beforeScan)
+            model.finderDepth = .quick
+
             // Find a strategy: runs beside the bypass without touching it.
             let before = model.engine.commandLine
             if let url = URL(string: "https://example.com") {

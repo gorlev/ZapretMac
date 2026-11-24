@@ -11,12 +11,27 @@ struct FinderSheet: View {
 
     var body: some View {
         @Bindable var prefs = model.prefs
+        @Bindable var model = model
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: Space.md) {
                 VStack(alignment: .leading, spacing: Space.xs) {
                     Text("Find a Strategy").font(.title2.weight(.semibold))
                     Text("ZapretMac opens the site once with each strategy. Your bypass keeps running while it tests.")
                         .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                VStack(alignment: .leading, spacing: Space.xs) {
+                    Picker("Scan", selection: $model.finderDepth) {
+                        Text("Quick").tag(ScanDepth.quick)
+                        Text("Thorough").tag(ScanDepth.thorough)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
+                    .disabled(finder.isRunning)
+                    Text(depthHelp)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -47,13 +62,15 @@ struct FinderSheet: View {
             if !finder.trials.isEmpty {
                 Divider()
                 List(finder.ranked) { trial in
-                    TrialRow(trial: trial, inUse: model.prefs.strategyID == trial.id) {
-                        model.choose(strategy: trial.id)
+                    TrialRow(trial: trial) {
+                        if !trial.isScan {
+                            UseButton(inUse: model.prefs.strategyID == trial.id) { model.choose(strategy: trial.id) }
+                        }
                     }
                 }
                 .listStyle(.inset)
                 .animation(.default, value: finder.ranked.map(\.id))
-                .frame(height: CGFloat(min(finder.trials.count, 8)) * 40)
+                .frame(height: listHeight)
             }
 
             Divider()
@@ -74,11 +91,28 @@ struct FinderSheet: View {
         .noInitialFocus()
     }
 
-    private var summary: String {
-        if finder.isRunning {
-            let done = finder.trials.filter { $0.status != .waiting && $0.status != .testing }.count
-            return String(localized: "Testing \(done + 1) of \(finder.trials.count)…")
+    /// Rows with flags under the name are taller; past eight rows the list scrolls.
+    private var listHeight: CGFloat {
+        let row: CGFloat = finder.trials.contains(where: \.isScan) ? 48 : 40
+        return min(CGFloat(finder.trials.count) * row, 8 * row)
+    }
+
+    private var depthHelp: String {
+        switch model.finderDepth {
+        case .quick: String(localized: "Tries the built-in strategies and yours.")
+        case .thorough: String(localized: "Tries every split and TLS-record combination zapret's blockcheck tests. Takes a few minutes.")
         }
+    }
+
+    private var summary: String {
+        let done = finder.finishedCount
+        let total = finder.trials.count
+        if finder.isRunning {
+            return finder.depth == .thorough
+                ? String(localized: "Try \(min(done + 1, total)) of \(total)…")
+                : String(localized: "Testing \(min(done + 1, total)) of \(total)…")
+        }
+        if finder.isStopped { return String(localized: "Stopped after \(done) of \(total).") }
         guard finder.isDone else { return "" }
         if finder.workingCount == 0 { return String(localized: "No strategy opened \(finder.site).") }
         return String(localized: "\(finder.workingCount) strategies open \(finder.site).")
@@ -90,37 +124,40 @@ struct FinderSheet: View {
     }
 }
 
-private struct TrialRow: View {
+/// One strategy's result. Scan tries show their flags under the name.
+/// `action` is shown after the time on rows that work (Use, and later Save).
+private struct TrialRow<Action: View>: View {
     let trial: Trial
-    let inUse: Bool
-    let use: () -> Void
+    @ViewBuilder let action: () -> Action
 
     var body: some View {
         HStack(spacing: Space.sm) {
             icon.frame(width: 20)
-            Text(trial.name)
-                .foregroundStyle(trial.status == .waiting ? .secondary : .primary)
-            Spacer()
+            VStack(alignment: .leading, spacing: 2) {
+                Text(trial.name)
+                    .foregroundStyle(trial.status == .waiting ? .secondary : .primary)
+                    .lineLimit(1)
+                if trial.isScan {
+                    Text(verbatim: trial.arguments.joined(separator: " "))
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
+            .layoutPriority(1)
+            Spacer(minLength: Space.sm)
             switch trial.status {
             case .waiting: EmptyView()
             case .testing: Text("Testing…").foregroundStyle(.secondary)
             case .works(let ms):
                 Text("\(ms) ms").foregroundStyle(.secondary).monospacedDigit()
-                if inUse {
-                    Label("In use", systemImage: "checkmark")
-                        .labelStyle(.titleOnly)
-                        .foregroundStyle(Palette.accentText)
-                        .frame(width: 56)
-                } else {
-                    Button("Use", action: use)
-                        .controlSize(.small)
-                        .frame(width: 56)
-                }
-            case .fails(let reason): Text(reason).foregroundStyle(.secondary)
+                action()
+            case .fails(let reason): Text(reason).foregroundStyle(.secondary).lineLimit(1)
             }
         }
         .font(.callout)
-        .frame(height: 28)
+        .frame(minHeight: 28)
     }
 
     @ViewBuilder private var icon: some View {
@@ -129,6 +166,24 @@ private struct TrialRow: View {
         case .testing: ProgressView().controlSize(.small)
         case .works: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
         case .fails: Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
+        }
+    }
+}
+
+private struct UseButton: View {
+    let inUse: Bool
+    let use: () -> Void
+
+    var body: some View {
+        if inUse {
+            Label("In use", systemImage: "checkmark")
+                .labelStyle(.titleOnly)
+                .foregroundStyle(Palette.accentText)
+                .frame(width: 56)
+        } else {
+            Button("Use", action: use)
+                .controlSize(.small)
+                .frame(width: 56)
         }
     }
 }
