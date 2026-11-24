@@ -88,3 +88,14 @@ func normalizes(_ input: String, expected: String) {
     let list = "An asterisk (*) denotes that a network service is disabled.\nWi-Fi\n*Thunderbolt Bridge\nUSB LAN\n"
     #expect(ProxyState.services(fromList: list) == ["Wi-Fi", "USB LAN"])
 }
+
+@Test func ranksTrials() {
+    let trials = [
+        Trial(id: "a", name: "A", arguments: [], status: .fails("Timed out")),
+        Trial(id: "b", name: "B", arguments: [], status: .works(milliseconds: 400)),
+        Trial(id: "c", name: "C", arguments: [], status: .waiting),
+        Trial(id: "d", name: "D", arguments: [], status: .works(milliseconds: 120)),
+        Trial(id: "e", name: "E", arguments: [], status: .fails("Reset")),
+    ]
+    #expect(Trial.ranked(trials).map(\.id) == ["d", "b", "c", "a", "e"])
+}

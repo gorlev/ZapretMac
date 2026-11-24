@@ -54,6 +54,10 @@ struct StrategiesPage: View {
         .navigationTitle("Strategies")
         .toolbar {
             ToolbarItem {
+                Button("Find a Strategy", systemImage: "wand.and.sparkles") { model.openFinder() }
+                    .help("Try every strategy on a blocked site (Shift-Command-T)")
+            }
+            ToolbarItem {
                 Button("New Strategy", systemImage: "plus") { model.newStrategy() }
                     .help("Make your own strategy (Command-N)")
             }

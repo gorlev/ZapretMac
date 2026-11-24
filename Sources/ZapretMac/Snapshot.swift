@@ -52,6 +52,20 @@ enum Snapshot {
                     model.draft = nil
                     try? await Task.sleep(for: .seconds(0.6))
                 }
+                // Find a Strategy with real results for example.com.
+                if let url = URL(string: "https://example.com") {
+                    model.prefs.testURL = "https://example.com"
+                    model.openFinder()
+                    model.startFinder(url: url)
+                    for _ in 0..<300 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
+                }
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    try? await Task.sleep(for: .seconds(0.8))
+                    capture(to: "\(dir)/finder-\(mode).png", window: main?.attachedSheet)
+                }
+                model.showFinder = false
+                try? await Task.sleep(for: .seconds(0.6))
                 model.turnOff()
                 model.check = nil
                 for mode in ["light", "dark"] {

@@ -77,6 +77,16 @@ enum SelfTest {
             try? await Task.sleep(for: .milliseconds(800))
             check("restarting with the site list keeps it running", model.engine.state == .running, "\(model.engine.state)")
             check("the list scope passes the hostlist", model.command.arguments.contains("--hostlist=\(Store.hostlistURL.path)"))
+            // Find a strategy: runs beside the bypass without touching it.
+            let before = model.engine.commandLine
+            if let url = URL(string: "https://example.com") {
+                model.startFinder(url: url)
+                for _ in 0..<200 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
+            }
+            check("finding a strategy tests every one", model.finder.isDone, "\(model.finder.trials.map(\.status))")
+            check("at least one strategy opens example.com", model.finder.workingCount > 0)
+            check("the bypass keeps running while it tests", model.engine.state == .running && model.engine.commandLine == before)
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 

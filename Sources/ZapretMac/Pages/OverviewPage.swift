@@ -343,9 +343,16 @@ private struct CheckCard: View {
                     }
                 }
                 .padding(.top, Space.xs)
-                Text(verdict(result))
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(verdict(result))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    if !(result.throughZapret?.isOK ?? result.direct.isOK) {
+                        Button("Find a Strategy…") { model.openFinder() }
+                            .help("Try every strategy on this site (Shift-Command-T)")
+                    }
+                }
             } else {
                 Text("Opens the address once directly and once through tpws, so you can see whether the strategy helps.")
                     .font(.caption)

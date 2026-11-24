@@ -19,6 +19,11 @@ struct ContentView: View {
             case .log: LogPage()
             }
         }
+        .sheet(isPresented: $model.showFinder) {
+            FinderSheet()
+                .environment(model)
+                .themed()
+        }
         .sheet(item: $model.draft) { draft in
             StrategyEditor(draft: draft)
                 .environment(model)

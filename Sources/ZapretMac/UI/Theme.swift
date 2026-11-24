@@ -62,7 +62,7 @@ final class ThemeStore {
     static let brand: Theme? = Theme(id: "brand", name: "Teal", shades: .init(light: 0x5FD8EC, base: 0x0891B2, deep: 0x0E7490), darkText: true)
 
     var themeID: String {
-        didSet { UserDefaults.standard.set(themeID, forKey: "appearance.accent") }
+        didSet { if !Store.isOverridden { UserDefaults.standard.set(themeID, forKey: "appearance.accent") } }
     }
 
     /// True while the Mac's accent is Multicolor.
@@ -77,8 +77,9 @@ final class ThemeStore {
     }
 
     private init() {
-        themeID = ProcessInfo.processInfo.environment["APP_ACCENT"]
-            ?? UserDefaults.standard.string(forKey: "appearance.accent") ?? Self.defaultID
+        // Test and snapshot runs (APP_STORE set) ignore the saved choice.
+        let saved = Store.isOverridden ? nil : UserDefaults.standard.string(forKey: "appearance.accent")
+        themeID = ProcessInfo.processInfo.environment["APP_ACCENT"] ?? saved ?? Self.defaultID
         NotificationCenter.default.addObserver(forName: NSColor.systemColorsDidChangeNotification,
                                                object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.macIsMulticolor = ThemeStore.readMulticolor() }

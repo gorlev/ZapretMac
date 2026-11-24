@@ -87,6 +87,8 @@ final class AppModel {
     let engine = Engine()
     let prefs = Prefs.shared
     let proxy: SystemProxy
+    let finder = StrategyFinder()
+    var showFinder = false
     var sidebar: SidebarItem? = .overview
     var draft: StrategyDraft?
     /// Bumped by the Add Sites command; the Sites page focuses its field.
@@ -302,6 +304,20 @@ final class AppModel {
             check = result
             isChecking = false
         }
+    }
+
+    // MARK: - Find a strategy
+
+    func openFinder() {
+        if SiteCheck.url(from: prefs.testURL) == nil { prefs.testURL = "https://discord.com" }
+        showFinder = true
+    }
+
+    /// Every built-in strategy, then the user's own.
+    func startFinder(url: URL) {
+        var list = Preset.all.map { (id: "preset:\($0.id)", name: $0.name, arguments: $0.options.arguments) }
+        list += customStrategies().map { (id: $0.selectionID, name: $0.name, arguments: $0.options.arguments) }
+        finder.start(url: url, strategies: list)
     }
 
     // MARK: - Login item

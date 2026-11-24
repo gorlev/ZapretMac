@@ -78,7 +78,7 @@ Acceptance:
 - [unit] Results sort working strategies by time, failed ones last.
 - [self] Testing example.com reports at least one working strategy and leaves the running bypass as it was.
 - [snap] A sheet lists each strategy with a progress, check, or cross, and "Use" on working rows.
-Status: doing
+Status: done
 
 ### S-021 Know when tpws stops by itself
 As the user, when tpws quits unexpectedly ZapretMac restarts it once; if it fails again I get a notification and the menu bar shield shows a warning.

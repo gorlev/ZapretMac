@@ -48,6 +48,8 @@ struct ZapretMacApp: App {
                     .keyboardShortcut("b")
                 Button("Check Site") { model.runCheck() }
                     .keyboardShortcut("t")
+                Button("Find a Strategy…") { model.openFinder() }
+                    .keyboardShortcut("t", modifiers: [.command, .shift])
                 Divider()
                 Toggle("Use as System Proxy", isOn: Binding(
                     get: { model.prefs.useSystemProxy },
