@@ -54,7 +54,7 @@ sed -e "s/__BUILD__/$(date +%Y%m%d%H%M)/" -e "s/__ZAPRET_COMMIT__/$commit/" "$he
 # The icon: Icon/AppIcon.icon -> Resources/Assets.car + AppIcon.icns, rebuilt when it changed.
 if [[ -d "$here/Icon/AppIcon.icon" ]]; then
   car="$here/Resources/Assets.car"
-  if [[ ! -f "$car" || -n "$(find "$here/Icon/AppIcon.icon" -newer "$car" | head -1)" ]]; then
+  if [[ ! -f "$car" || -n "$(find "$here/Icon" -newer "$car" | head -1)" ]]; then
     "$here/tools/make_icon.sh"
   fi
   cp -X "$car" "$here/Resources/AppIcon.icns" "$app/Contents/Resources/"

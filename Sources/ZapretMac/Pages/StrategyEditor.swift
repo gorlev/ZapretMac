@@ -64,9 +64,13 @@ struct StrategyEditor: View {
                 }
                 Section {
                     TextField("Only these ports", text: $draft.options.tcpPorts, prompt: Text("80,443"))
-                    TextField("More tpws flags", text: $extraText, prompt: Text("--mss=88"), axis: .vertical)
-                        .font(.body.monospaced())
-                        .lineLimit(1...3)
+                    LabeledContent("More tpws flags") {
+                        TextField("More tpws flags", text: $extraText, prompt: Text("--mss=88"), axis: .vertical)
+                            .labelsHidden()
+                            .font(.body.monospaced())
+                            .multilineTextAlignment(.trailing)
+                            .lineLimit(1...3)
+                    }
                 } header: {
                     Text("Advanced")
                 } footer: {
@@ -92,7 +96,7 @@ struct StrategyEditor: View {
                 }
             }
             .formStyle(.grouped)
-            .fitsContent(max: 620)
+            .fitsContent(max: 520)
             Divider()
             HStack {
                 Spacer()

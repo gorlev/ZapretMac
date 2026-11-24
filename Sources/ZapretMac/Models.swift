@@ -89,6 +89,8 @@ final class AppModel {
     let proxy: SystemProxy
     var sidebar: SidebarItem? = .overview
     var draft: StrategyDraft?
+    /// Bumped by the Add Sites command; the Sites page focuses its field.
+    var addSitesRequest = 0
     var check: SiteCheck.Result?
     var isChecking = false
     /// Settings reopens on the last tab. Test and snapshot runs leave it alone.
@@ -102,6 +104,29 @@ final class AppModel {
     }
 
     private var context: ModelContext { container.mainContext }
+
+    // MARK: - Undo
+
+    /// Ties SwiftData to the window's undo manager, so Edit > Undo brings
+    /// back deleted sites and strategies, and rewrites the hostlist files.
+    func attachUndo(_ undoManager: UndoManager?) {
+        guard let undoManager, context.undoManager !== undoManager else { return }
+        context.undoManager = undoManager
+        for name in [NSNotification.Name.NSUndoManagerDidUndoChange, .NSUndoManagerDidRedoChange] {
+            NotificationCenter.default.addObserver(forName: name, object: undoManager, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.listsChanged() }
+            }
+        }
+    }
+
+    private func undoName(_ name: String) {
+        context.undoManager?.setActionName(name)
+    }
+
+    func requestAddSites() {
+        sidebar = .domains
+        addSitesRequest += 1
+    }
 
     // MARK: - Strategies
 
@@ -155,6 +180,7 @@ final class AppModel {
         let wasActive = prefs.strategyID == strategy.selectionID
         context.delete(strategy)
         try? context.save()
+        undoName("Delete Strategy")
         if wasActive { choose(strategy: "preset:\(Preset.defaultID)") }
     }
 
@@ -175,13 +201,17 @@ final class AppModel {
             added += 1
         }
         try? context.save()
-        if added > 0 { listsChanged() }
+        if added > 0 {
+            undoName(added == 1 ? "Add Site" : "Add Sites")
+            listsChanged()
+        }
         return added
     }
 
     func remove(_ entries: [DomainEntry]) {
         for entry in entries { context.delete(entry) }
         try? context.save()
+        undoName(entries.count == 1 ? "Delete Site" : "Delete Sites")
         listsChanged()
     }
 

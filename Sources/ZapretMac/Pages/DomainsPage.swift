@@ -12,6 +12,7 @@ struct DomainsPage: View {
     @State private var selection = Set<PersistentIdentifier>()
     @State private var importing = false
     @State private var note: String?
+    @FocusState private var inputFocused: Bool
 
     private var entries: [DomainEntry] { all.filter { $0.isExcluded == showExcluded } }
 
@@ -65,11 +66,15 @@ struct DomainsPage: View {
                     .help("Add every domain in a text file, one per line")
             }
             ToolbarItem {
+                Button("Add Sites", systemImage: "plus") { inputFocused = true }
+                    .help("Type or paste sites to add (Shift-Command-N)")
+            }
+            ToolbarItem {
                 Button("Delete", systemImage: "trash") {
                     model.remove(entries.filter { selection.contains($0.id) })
                 }
                 .disabled(selection.isEmpty)
-                .help("Delete the selected sites (Delete)")
+                .help("Delete the selected sites. Undo with Command-Z (Delete)")
             }
         }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.plainText, .text], allowsMultipleSelection: true) { result in
@@ -85,6 +90,8 @@ struct DomainsPage: View {
             note = added == 1 ? "Added 1 site." : "Added \(added) sites."
         }
         .onChange(of: showExcluded) { selection.removeAll(); note = nil }
+        .onChange(of: model.addSitesRequest) { inputFocused = true }
+        .onAppear { if model.addSitesRequest > 0 { inputFocused = true } }
     }
 
     private var header: some View {
@@ -93,6 +100,7 @@ struct DomainsPage: View {
                 TextField("Add sites", text: $input,
                           prompt: Text(showExcluded ? "Add a site never to touch, like mybank.com" : "Add sites, like youtube.com discord.com"))
                     .textFieldStyle(.roundedBorder)
+                    .focused($inputFocused)
                     .onSubmit(add)
                 Button("Add", action: add)
                     .buttonStyle(.borderedProminent)

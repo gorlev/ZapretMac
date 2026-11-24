@@ -92,6 +92,7 @@ struct PowerButton: View {
     let state: Engine.State
     let action: () -> Void
     @State private var hovering = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let size: CGFloat = 148
 
@@ -124,12 +125,12 @@ struct PowerButton: View {
                         .contentTransition(.symbolEffect(.replace))
                 }
             }
-            .scaleEffect(hovering ? 1.03 : 1)
+            .scaleEffect(hovering && !reduceMotion ? 1.03 : 1)
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .animation(.spring(duration: 0.35), value: state)
+        .animation(reduceMotion ? nil : .spring(duration: 0.35), value: state)
         .animation(.easeOut(duration: 0.15), value: hovering)
         .help(isOn ? "Turn the bypass off (Command-B)" : "Turn the bypass on (Command-B)")
         .accessibilityLabel(isOn ? "Turn bypass off" : "Turn bypass on")

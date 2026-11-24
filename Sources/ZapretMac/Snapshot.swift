@@ -1,6 +1,7 @@
 import AppKit
 import IOKit.pwr_mgt
 import SwiftUI
+import ZapretMacKit
 
 /// Screenshot mode for automated checks.
 ///   APP_STORE=/tmp/test.store APP_SNAPSHOT=/tmp/shots ~/Applications/ZapretMac.app/Contents/MacOS/ZapretMac
@@ -36,6 +37,28 @@ enum Snapshot {
                     model.sidebar = page
                     try? await Task.sleep(for: .seconds(0.8))
                     capture(to: "\(dir)/\(page.rawValue)-\(mode).png")
+                }
+            }
+            // The strategy editor sheet, then Overview with the bypass off.
+            if only == nil || only?.contains("extras") == true {
+                let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    model.sidebar = .strategies
+                    model.newStrategy(from: StrategyOptions(commandLine: "--tlsrec=sniext+1 --split-pos=1,midsld --disorder"),
+                                      name: "My Provider")
+                    try? await Task.sleep(for: .seconds(1))
+                    capture(to: "\(dir)/editor-\(mode).png", window: main?.attachedSheet)
+                    model.draft = nil
+                    try? await Task.sleep(for: .seconds(0.6))
+                }
+                model.turnOff()
+                model.check = nil
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    model.sidebar = .overview
+                    try? await Task.sleep(for: .seconds(0.8))
+                    capture(to: "\(dir)/overview-off-\(mode).png")
                 }
             }
             if only == nil || only?.contains("settings") == true {

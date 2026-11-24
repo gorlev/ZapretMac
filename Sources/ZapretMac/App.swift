@@ -40,6 +40,8 @@ struct ZapretMacApp: App {
             CommandGroup(replacing: .newItem) {
                 Button("New Strategy…") { model.newStrategy() }
                     .keyboardShortcut("n")
+                Button("Add Sites…") { model.requestAddSites() }
+                    .keyboardShortcut("n", modifiers: [.command, .shift])
             }
             CommandMenu("Bypass") {
                 Button(model.engine.isOn ? "Turn Off" : "Turn On") { model.toggle() }
@@ -50,6 +52,11 @@ struct ZapretMacApp: App {
                 Toggle("Use as System Proxy", isOn: Binding(
                     get: { model.prefs.useSystemProxy },
                     set: { model.prefs.useSystemProxy = $0; model.systemProxyChanged() }))
+                Divider()
+                Button("Copy tpws Command") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(model.command.commandLine(binary: Engine.binaryURL.path), forType: .string)
+                }
             }
             CommandGroup(after: .sidebar) {
                 ForEach(SidebarItem.allCases) { page in

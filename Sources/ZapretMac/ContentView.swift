@@ -4,6 +4,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.undoManager) private var undoManager
     @Query private var domains: [DomainEntry]
 
     var body: some View {
@@ -24,6 +25,8 @@ struct ContentView: View {
                 .themed()
         }
         .noInitialFocus()
+        .onAppear { model.attachUndo(undoManager) }
+        .onChange(of: undoManager) { model.attachUndo(undoManager) }
         .task {
             SeedData.insertIfRequested(into: model)
             SelfTest.runIfRequested(model: model)
@@ -55,6 +58,7 @@ struct ContentView: View {
 /// A small status line at the foot of the sidebar: is the bypass on?
 private struct SidebarStatus: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.appearsActive) private var appearsActive
 
     var body: some View {
         HStack(spacing: Space.sm) {
@@ -69,6 +73,8 @@ private struct SidebarStatus: View {
             }
             Spacer(minLength: 0)
         }
+        // Dims with the window, like the system sidebar.
+        .opacity(appearsActive ? 1 : 0.6)
         .padding(.horizontal, Space.lg)
         .padding(.vertical, Space.md)
         .accessibilityElement(children: .combine)

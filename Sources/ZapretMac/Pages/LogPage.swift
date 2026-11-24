@@ -81,9 +81,18 @@ struct LogPage: View {
                 .help("Keep the newest line in view")
             }
             ToolbarItem {
-                Button("Copy", systemImage: "doc.on.doc") { copy(visible.map(\.text).joined(separator: "\n")) }
-                    .help("Copy the lines shown")
-                    .disabled(visible.isEmpty)
+                Menu {
+                    Button("Copy Lines") { copy(visible.map(\.text).joined(separator: "\n")) }
+                        .disabled(visible.isEmpty)
+                    Button("Copy tpws Command") { copy(model.engine.commandLine) }
+                        .disabled(model.engine.commandLine.isEmpty)
+                } label: {
+                    Label("Copy", systemImage: "document.on.document")
+                } primaryAction: {
+                    copy(visible.map(\.text).joined(separator: "\n"))
+                }
+                .help("Copy the lines shown. Hold for the tpws command")
+                .disabled(visible.isEmpty && model.engine.commandLine.isEmpty)
             }
             ToolbarItem {
                 Button("Clear", systemImage: "trash") { model.engine.clearLog() }
@@ -104,8 +113,13 @@ struct LogPage: View {
                 .truncationMode(.middle)
                 .textSelection(.enabled)
             Spacer()
-            Button("Copy Command") { copy(model.engine.commandLine) }
-                .controlSize(.small)
+            Text(visible.count == 1 ? "1 line" : "\(visible.count) lines")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .contextMenu {
+            Button("Copy tpws Command") { copy(model.engine.commandLine) }
         }
         .padding(.horizontal, Space.lg)
         .padding(.vertical, Space.sm)
