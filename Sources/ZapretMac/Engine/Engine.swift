@@ -47,7 +47,7 @@ final class Engine {
     func start(_ command: TPWSCommand) {
         stop()
         guard Self.binaryExists else {
-            state = .failed("tpws is missing from the app. Rebuild it with ./build.sh.")
+            state = .failed(String(localized: "tpws is missing from the app. Rebuild it with ./build.sh."))
             return
         }
         generation += 1
@@ -77,7 +77,7 @@ final class Engine {
         do {
             try process.run()
         } catch {
-            state = .failed("Could not start tpws: \(error.localizedDescription)")
+            state = .failed(String(localized: "Could not start tpws: \(error.localizedDescription)"))
             return
         }
         self.process = process
@@ -144,7 +144,7 @@ final class Engine {
         process = nil
         startedAt = nil
         let lastError = lines.last(where: { $0.kind == .error })?.text
-        let reason = lastError ?? "tpws quit with code \(code)."
+        let reason = lastError ?? String(localized: "tpws quit with code \(Int(code)).")
         // Restart once; a second exit within a minute is a real failure.
         recentCrashes = recentCrashes.filter { $0 > Date.now.addingTimeInterval(-60) }
         if recentCrashes.isEmpty, let lastCommand {

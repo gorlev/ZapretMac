@@ -14,9 +14,9 @@ struct LogPage: View {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .all: "All"
-            case .sites: "Sites"
-            case .errors: "Errors"
+            case .all: String(localized: "All")
+            case .sites: String(localized: "Sites")
+            case .errors: String(localized: "Errors")
             }
         }
     }
@@ -113,7 +113,7 @@ struct LogPage: View {
                 .truncationMode(.middle)
                 .textSelection(.enabled)
             Spacer()
-            Text(visible.count == 1 ? "1 line" : "\(visible.count) lines")
+            Text("\(visible.count) lines")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()

@@ -108,10 +108,10 @@ Status: done
 ### S-040 Use ZapretMac in my language
 As a user whose Mac is set to Turkish, German, Spanish, Italian, French, Brazilian Portuguese, or Russian, I see every label, menu, and message written naturally in that language; English stays the base.
 Acceptance:
-- [unit] Every key in Localizable.xcstrings has a value in all eight languages, and format specifiers match the English ones.
+- [script] `tools/l10n.py check` passes: every key of en.json has a value in all seven translations, placeholders match, plural forms follow CLDR, no value sits under the wrong key. build.sh refuses to build otherwise.
 - [snap] All pages with APP_LANG=<code> show the language with no clipping.
 - [manual] A native speaker reads it as written in the language, not translated.
-Status: todo
+Status: done
 
 ## Later
 - Transparent pf mode with a privileged helper (no proxy setup per app)

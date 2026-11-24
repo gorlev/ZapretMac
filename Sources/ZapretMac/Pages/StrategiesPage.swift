@@ -12,7 +12,7 @@ struct StrategiesPage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.section) {
-                section("Built-in", caption: "Ready-made strategies from zapret. Start with the first one; if a site still does not open, try the next.") {
+                section("Built-in", id: "builtin", caption: "Ready-made strategies from zapret. Start with the first one; if a site still does not open, try the next.") {
                     ForEach(Preset.all) { preset in
                         let id = "preset:\(preset.id)"
                         StrategyCard(name: preset.name, symbol: preset.symbol, blurb: preset.blurb,
@@ -23,12 +23,12 @@ struct StrategiesPage: View {
                             Button("Use") { model.choose(strategy: id) }
                             Button("Copy Flags") { model.copyFlags(preset.commandLine) }
                             Button("Duplicate and Edit…") {
-                                model.newStrategy(from: preset.options, name: "\(preset.name) Copy")
+                                model.newStrategy(from: preset.options, name: String(localized: "\(preset.name) Copy"))
                             }
                         }
                     }
                 }
-                section("Yours", caption: "Strategies you made from tpws options.") {
+                section("Yours", id: "yours", caption: "Strategies you made from tpws options.") {
                     ForEach(custom) { strategy in
                         StrategyCard(name: strategy.name, symbol: "person.crop.circle",
                                      blurb: strategy.options.summary, commandLine: strategy.commandLine,
@@ -40,7 +40,7 @@ struct StrategiesPage: View {
                             Button("Edit…") { model.edit(strategy) }
                             Button("Copy Flags") { model.copyFlags(strategy.commandLine) }
                             Button("Duplicate") {
-                                model.newStrategy(from: strategy.options, name: "\(strategy.name) Copy")
+                                model.newStrategy(from: strategy.options, name: String(localized: "\(strategy.name) Copy"))
                             }
                             Divider()
                             Button("Delete", role: .destructive) { model.delete(strategy) }
@@ -66,14 +66,14 @@ struct StrategiesPage: View {
         }
     }
 
-    private func section<Content: View>(_ title: String, caption: String,
+    private func section<Content: View>(_ title: LocalizedStringKey, id: String, caption: LocalizedStringKey,
                                         @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: Space.md) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.title3.weight(.semibold))
                 Text(caption).font(.callout).foregroundStyle(.secondary)
             }
-            .gridProbe("section-\(title)", area: "strategies")
+            .gridProbe("section-\(id)", area: "strategies")
             LazyVGrid(columns: columns, alignment: .leading, spacing: Space.lg) {
                 content()
             }
@@ -114,7 +114,7 @@ private struct StrategyCard: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(3, reservesSpace: true)
                 }
-                Text(commandLine.isEmpty ? "no flags" : commandLine)
+                Text(commandLine.isEmpty ? String(localized: "no flags") : commandLine)
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
                     .lineLimit(2)

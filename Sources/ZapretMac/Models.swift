@@ -45,10 +45,10 @@ enum SidebarItem: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .overview: "Overview"
-        case .strategies: "Strategies"
-        case .domains: "Sites"
-        case .log: "Log"
+        case .overview: String(localized: "Overview")
+        case .strategies: String(localized: "Strategies")
+        case .domains: String(localized: "Sites")
+        case .log: String(localized: "Log")
         }
     }
 
@@ -111,7 +111,7 @@ final class AppModel {
             guard let self else { return }
             // Nothing listens on the port now: give apps their old proxy back.
             if proxy.isApplied { Task { await self.proxy.restore() } }
-            if !Store.isOverridden { Notifier.post(title: "ZapretMac stopped", body: reason) }
+            if !Store.isOverridden { Notifier.post(title: String(localized: "ZapretMac stopped"), body: reason) }
         }
     }
 
@@ -231,7 +231,7 @@ final class AppModel {
         }
         try? context.save()
         if added > 0 {
-            undoName(added == 1 ? "Add Site" : "Add Sites")
+            undoName(String(localized: "Add \(added) Sites"))
             listsChanged()
         }
         return added
@@ -240,7 +240,7 @@ final class AppModel {
     func remove(_ entries: [DomainEntry]) {
         for entry in entries { context.delete(entry) }
         try? context.save()
-        undoName(entries.count == 1 ? "Delete Site" : "Delete Sites")
+        undoName(String(localized: "Delete \(entries.count) Sites"))
         listsChanged()
     }
 
@@ -268,11 +268,6 @@ final class AppModel {
                            hostlistPath: Store.hostlistURL.path,
                            excludePath: exclude ? Store.excludeURL.path : nil,
                            debug: prefs.verboseLog)
-    }
-
-    /// A list scope with an empty list would change nothing.
-    var scopeProblem: String? {
-        prefs.scope == .listOnly && includeCount == 0 ? "Your site list is empty. Add sites or choose All sites." : nil
     }
 
     func toggle() {

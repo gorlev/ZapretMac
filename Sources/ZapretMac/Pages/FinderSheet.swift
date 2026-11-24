@@ -28,7 +28,7 @@ struct FinderSheet: View {
                     if finder.isRunning {
                         Button("Stop") { finder.stop() }
                     } else {
-                        Button(finder.trials.isEmpty ? "Start Test" : "Test Again", action: start)
+                        Button(finder.trials.isEmpty ? String(localized: "Start Test") : String(localized: "Test Again"), action: start)
                             .buttonStyle(.borderedProminent)
                             .disabled(SiteCheck.url(from: prefs.testURL) == nil)
                     }
@@ -77,14 +77,11 @@ struct FinderSheet: View {
     private var summary: String {
         if finder.isRunning {
             let done = finder.trials.filter { $0.status != .waiting && $0.status != .testing }.count
-            return "Testing \(done + 1) of \(finder.trials.count)…"
+            return String(localized: "Testing \(done + 1) of \(finder.trials.count)…")
         }
         guard finder.isDone else { return "" }
-        switch finder.workingCount {
-        case 0: return "No strategy opened \(finder.site)."
-        case 1: return "1 strategy opens \(finder.site)."
-        default: return "\(finder.workingCount) strategies open \(finder.site)."
-        }
+        if finder.workingCount == 0 { return String(localized: "No strategy opened \(finder.site).") }
+        return String(localized: "\(finder.workingCount) strategies open \(finder.site).")
     }
 
     private func start() {

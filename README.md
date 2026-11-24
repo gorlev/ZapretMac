@@ -13,6 +13,7 @@ On macOS zapret runs `tpws`, a proxy that splits and rewrites the first packets 
 - **Log**: tpws output, live, filtered by sites or errors, with the exact command to copy.
 - **System proxy**: on with one admin prompt, restored on stop, quit, or after a crash.
 - Open at login, start on launch, light and dark mode.
+- In English, Türkçe, Deutsch, Español, Italiano, Français, Português (Brasil), and Русский, following the Mac's language (or a per-app language in System Settings).
 
 ## Build
 

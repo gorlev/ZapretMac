@@ -46,7 +46,7 @@ struct ZapretMacApp: App {
                     .keyboardShortcut("n", modifiers: [.command, .shift])
             }
             CommandMenu("Bypass") {
-                Button(model.engine.isOn ? "Turn Off" : "Turn On") { model.toggle() }
+                Button(model.engine.isOn ? String(localized: "Turn Off") : String(localized: "Turn On")) { model.toggle() }
                     .keyboardShortcut("b")
                 Button("Check Site") { model.runCheck() }
                     .keyboardShortcut("t")

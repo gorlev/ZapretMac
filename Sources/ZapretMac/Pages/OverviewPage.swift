@@ -24,9 +24,9 @@ struct OverviewPage: View {
         .navigationTitle("Overview")
         .toolbar {
             ToolbarItem {
-                Button(model.engine.isOn ? "Turn Off" : "Turn On",
+                Button(model.engine.isOn ? String(localized: "Turn Off") : String(localized: "Turn On"),
                        systemImage: model.engine.isOn ? "stop.fill" : "play.fill") { model.toggle() }
-                    .help(model.engine.isOn ? "Turn the bypass off (Command-B)" : "Turn the bypass on (Command-B)")
+                    .help(model.engine.isOn ? String(localized: "Turn the bypass off (Command-B)") : String(localized: "Turn the bypass on (Command-B)"))
             }
         }
     }
@@ -64,23 +64,23 @@ private struct Hero: View {
 
     private var headline: String {
         switch model.engine.state {
-        case .stopped: "Bypass is off"
-        case .starting: "Starting…"
-        case .running: "Bypass is on"
-        case .failed: "tpws stopped"
+        case .stopped: String(localized: "Bypass is off")
+        case .starting: String(localized: "Starting…")
+        case .running: String(localized: "Bypass is on")
+        case .failed: String(localized: "tpws stopped")
         }
     }
 
     private var subline: String {
         switch model.engine.state {
         case .stopped:
-            "Click the switch to open blocked sites with \(model.activeStrategy.name)."
+            String(localized: "Click the switch to open blocked sites with \(model.activeStrategy.name).")
         case .starting:
-            "Starting tpws on port \(String(model.prefs.port))."
+            String(localized: "Starting tpws on port \(String(model.prefs.port)).")
         case .running:
             model.prefs.useSystemProxy && model.proxy.isApplied
-                ? "Every app that uses the system proxy now goes through \(model.activeStrategy.name)."
-                : "SOCKS5 proxy ready at 127.0.0.1:\(String(model.prefs.port)). Point your browser at it."
+                ? String(localized: "Every app that uses the system proxy now goes through \(model.activeStrategy.name).")
+                : String(localized: "SOCKS5 proxy ready at 127.0.0.1:\(String(model.prefs.port)). Point your browser at it.")
         case .failed(let message):
             message
         }
@@ -132,8 +132,8 @@ struct PowerButton: View {
         .onHover { hovering = $0 }
         .animation(reduceMotion ? nil : .spring(duration: 0.35), value: state)
         .animation(.easeOut(duration: 0.15), value: hovering)
-        .help(isOn ? "Turn the bypass off (Command-B)" : "Turn the bypass on (Command-B)")
-        .accessibilityLabel(isOn ? "Turn bypass off" : "Turn bypass on")
+        .help(isOn ? String(localized: "Turn the bypass off (Command-B)") : String(localized: "Turn the bypass on (Command-B)"))
+        .accessibilityLabel(isOn ? String(localized: "Turn bypass off") : String(localized: "Turn bypass on"))
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 
@@ -170,7 +170,7 @@ private struct StatsRow: View {
 }
 
 private struct StatTile: View {
-    let title: String
+    let title: LocalizedStringKey
     let symbol: String
     let value: String
 
@@ -203,15 +203,15 @@ private struct SetupCard: View {
         @Bindable var prefs = model.prefs
         VStack(alignment: .leading, spacing: 0) {
             CardRow(title: "Strategy", symbol: "slider.horizontal.3",
-                    caption: "How tpws changes your traffic so the filter cannot read it.") {
+                    caption: String(localized: "How tpws changes your traffic so the filter cannot read it.")) {
                 StrategyMenu()
             }
             Divider().padding(.leading, 48)
             CardRow(title: "Sites", symbol: "globe",
                     caption: prefs.scope == .listOnly && includeCount == 0
-                        ? "Your list is empty. Add sites on the Sites page, or choose All sites."
-                        : (prefs.scope == .allSites ? "Every site goes through the bypass."
-                                                    : "Only the \(includeCount) sites in your list.")) {
+                        ? String(localized: "Your list is empty. Add sites on the Sites page, or choose All sites.")
+                        : (prefs.scope == .allSites ? String(localized: "Every site goes through the bypass.")
+                                                    : String(localized: "Only the \(includeCount) sites in your list."))) {
                 Picker("Sites", selection: Binding(get: { prefs.scope },
                                                   set: { prefs.scope = $0; model.restartIfRunning() })) {
                     Text("All sites").tag(Scope.allSites)
@@ -223,7 +223,7 @@ private struct SetupCard: View {
             }
             Divider().padding(.leading, 48)
             CardRow(title: "System proxy", symbol: "point.3.connected.trianglepath.dotted",
-                    caption: "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.") {
+                    caption: String(localized: "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.")) {
                 Toggle("System proxy", isOn: Binding(get: { prefs.useSystemProxy },
                                                     set: { prefs.useSystemProxy = $0; model.systemProxyChanged() }))
                     .toggleStyle(.switch)
@@ -273,7 +273,7 @@ struct StrategyMenu: View {
 }
 
 private struct CardRow<Control: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     let symbol: String
     let caption: String
     @ViewBuilder var control: Control
@@ -320,9 +320,9 @@ private struct CheckCard: View {
                     model.runCheck()
                 } label: {
                     if model.isChecking {
-                        ProgressView().controlSize(.small).frame(width: 48)
+                        ProgressView().controlSize(.small).frame(minWidth: 48)
                     } else {
-                        Text("Check").frame(width: 48)
+                        Text("Check").frame(minWidth: 48)
                     }
                 }
                 .buttonStyle(.borderedProminent)
@@ -366,19 +366,19 @@ private struct CheckCard: View {
 
     private func verdict(_ r: SiteCheck.Result) -> String {
         guard let via = r.throughZapret else {
-            return r.direct.isOK ? "The site opens without help." : "The site does not open directly."
+            return r.direct.isOK ? String(localized: "The site opens without help.") : String(localized: "The site does not open directly.")
         }
         switch (r.direct.isOK, via.isOK) {
-        case (false, true): return "ZapretMac opens this site. The strategy works."
-        case (true, true): return "The site opens either way."
-        case (false, false): return "Still blocked. Try another strategy."
-        case (true, false): return "The strategy breaks this site. Add it to Never touch, or pick another strategy."
+        case (false, true): return String(localized: "ZapretMac opens this site. The strategy works.")
+        case (true, true): return String(localized: "The site opens either way.")
+        case (false, false): return String(localized: "Still blocked. Try another strategy.")
+        case (true, false): return String(localized: "The strategy breaks this site. Add it to Never Touch, or pick another strategy.")
         }
     }
 }
 
 private struct CheckRow: View {
-    let title: String
+    let title: LocalizedStringKey
     let outcome: SiteCheck.Outcome
 
     var body: some View {

@@ -37,7 +37,7 @@ final class SystemProxy {
         lastError = nil
         let services = await Self.services()
         guard !services.isEmpty else {
-            lastError = "No active network service found."
+            lastError = String(localized: "No active network service found.")
             return
         }
         if saved == nil {
@@ -127,7 +127,7 @@ final class SystemProxy {
             let apple = "do shell script \"\(script.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\""))\" with administrator privileges"
             let result = run("/usr/bin/osascript", ["-e", apple])
             if result.status == 0 { return nil }
-            return result.output.contains("-128") ? "Cancelled." : "Could not change the proxy: \(result.output.trimmingCharacters(in: .whitespacesAndNewlines))"
+            return result.output.contains("-128") ? String(localized: "Cancelled.") : String(localized: "Could not change the proxy: \(result.output.trimmingCharacters(in: .whitespacesAndNewlines))")
         }.value
     }
 

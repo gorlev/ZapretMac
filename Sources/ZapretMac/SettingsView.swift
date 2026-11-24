@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import ZapretMacKit
 
@@ -42,9 +43,9 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .general: "General"
-        case .appearance: "Appearance"
-        case .about: "About"
+        case .general: String(localized: "General")
+        case .appearance: String(localized: "Appearance")
+        case .about: String(localized: "About")
         }
     }
 
@@ -84,6 +85,21 @@ struct GeneralSettings: View {
             Text(portFooter)
                 .foregroundStyle(TPWSCommand.isValidPort(Int(portText) ?? 0) || portText.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(.red))
         }
+        Section {
+            LabeledContent("Language") {
+                Text(Locale.current.localizedString(forLanguageCode: Bundle.main.preferredLocalizations.first ?? "en")?.localizedCapitalized ?? "English")
+            }
+            Button("Change in System Settings…") {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.Localization-Settings.extension") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+        } header: {
+            Text("Language")
+        } footer: {
+            Text("ZapretMac follows your Mac's language. To use another language for ZapretMac only, add it under Applications in Language & Region.")
+                .foregroundStyle(.secondary)
+        }
         Section("Log") {
             Toggle("Show every connection in the log", isOn: Binding(get: { prefs.verboseLog },
                                                                       set: { prefs.verboseLog = $0; model.restartIfRunning() }))
@@ -92,8 +108,8 @@ struct GeneralSettings: View {
     }
 
     private var portFooter: String {
-        if let port = Int(portText), !TPWSCommand.isValidPort(port) { return "Use a port from 1024 to 65535." }
-        return "tpws listens on 127.0.0.1 only. Press Return to apply. Browsers without the system proxy can use SOCKS5 127.0.0.1:\(model.prefs.port)."
+        if let port = Int(portText), !TPWSCommand.isValidPort(port) { return String(localized: "Use a port from 1024 to 65535.") }
+        return String(localized: "tpws listens on 127.0.0.1 only. Press Return to apply. Browsers without the system proxy can use SOCKS5 127.0.0.1:\(String(model.prefs.port)).")
     }
 
     private func applyPort() {

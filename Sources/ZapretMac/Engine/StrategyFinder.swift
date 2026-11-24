@@ -51,14 +51,14 @@ final class StrategyFinder {
 
     /// Starts tpws with one strategy, opens the site through it, stops tpws.
     nonisolated static func trial(url: URL, arguments: [String]) async -> Trial.Status {
-        guard let port = freePort() else { return .fails("No free port") }
+        guard let port = freePort() else { return .fails(String(localized: "No free port")) }
         let command = TPWSCommand(port: port, strategy: arguments, scope: .allSites, debug: false)
         let process = Process()
         process.executableURL = Engine.binaryURL
         process.arguments = command.arguments
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
-        do { try process.run() } catch { return .fails("tpws did not start") }
+        do { try process.run() } catch { return .fails(String(localized: "tpws did not start")) }
         defer {
             process.terminate()
             process.waitUntilExit()
@@ -68,7 +68,7 @@ final class StrategyFinder {
             if isListening(port) { break }
             try? await Task.sleep(for: .milliseconds(50))
         }
-        guard process.isRunning else { return .fails("tpws refused these flags") }
+        guard process.isRunning else { return .fails(String(localized: "tpws refused these flags")) }
         switch await SiteCheck.fetch(url, socksPort: port) {
         case .ok(_, let ms): return .works(milliseconds: ms)
         case .failed(let reason): return .fails(reason)

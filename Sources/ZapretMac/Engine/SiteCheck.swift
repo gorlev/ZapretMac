@@ -67,13 +67,13 @@ enum SiteCheck {
 
     nonisolated private static func describe(_ error: URLError) -> String {
         switch error.code {
-        case .timedOut: "Timed out"
-        case .networkConnectionLost: "Connection reset"
+        case .timedOut: String(localized: "Timed out")
+        case .networkConnectionLost: String(localized: "Connection reset")
         case .secureConnectionFailed, .serverCertificateUntrusted, .serverCertificateHasBadDate:
-            "Secure connection failed"
-        case .cannotFindHost, .dnsLookupFailed: "Site not found"
-        case .cannotConnectToHost: "Could not connect"
-        case .notConnectedToInternet: "No internet"
+            String(localized: "Secure connection failed")
+        case .cannotFindHost, .dnsLookupFailed: String(localized: "Site not found")
+        case .cannotConnectToHost: String(localized: "Could not connect")
+        case .notConnectedToInternet: String(localized: "No internet")
         default: error.localizedDescription
         }
     }

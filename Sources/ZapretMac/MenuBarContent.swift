@@ -11,7 +11,7 @@ struct MenuBarContent: View {
 
     var body: some View {
         Text(model.engine.state.title)
-        Button(model.engine.isOn ? "Turn Off" : "Turn On") { model.toggle() }
+        Button(model.engine.isOn ? String(localized: "Turn Off") : String(localized: "Turn On")) { model.toggle() }
             .keyboardShortcut("b")
         Divider()
         Picker("Strategy", selection: Binding(get: { model.prefs.strategyID },

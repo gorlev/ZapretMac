@@ -78,7 +78,7 @@ struct StrategyEditor: View {
                         .foregroundStyle(.secondary)
                 }
                 Section("Command") {
-                    Text(options.commandLine.isEmpty ? "No flags: traffic is passed through unchanged." : options.commandLine)
+                    Text(options.commandLine.isEmpty ? String(localized: "No flags: traffic is passed through unchanged.") : options.commandLine)
                         .font(.callout.monospaced())
                         .foregroundStyle(options.commandLine.isEmpty ? .secondary : .primary)
                         .textSelection(.enabled)
@@ -104,7 +104,7 @@ struct StrategyEditor: View {
                 Spacer()
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button(draft.editing == nil ? "Create" : "Save") {
+                Button(draft.editing == nil ? String(localized: "Create") : String(localized: "Save")) {
                     var final = draft
                     final.options = options
                     model.save(final)
@@ -133,8 +133,8 @@ struct StrategyEditor: View {
         Task {
             let result = await Engine.dryRun(args)
             let message = result.ok
-                ? "tpws accepts these flags."
-                : result.output.split(whereSeparator: \.isNewline).last(where: { !$0.isEmpty }).map(String.init) ?? "tpws refused these flags."
+                ? String(localized: "tpws accepts these flags.")
+                : result.output.split(whereSeparator: \.isNewline).last(where: { !$0.isEmpty }).map(String.init) ?? String(localized: "tpws refused these flags.")
             check = (result.ok, message)
             checking = false
         }

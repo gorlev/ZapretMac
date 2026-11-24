@@ -71,7 +71,7 @@ private struct SidebarStatus: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(model.engine.state.title)
                     .font(.callout.weight(.medium))
-                Text(model.engine.isOn ? "127.0.0.1:\(String(model.prefs.port))" : "Not running")
+                Text(model.engine.isOn ? "127.0.0.1:\(String(model.prefs.port))" : String(localized: "Not running"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -111,10 +111,10 @@ extension Engine {
 extension Engine.State {
     var title: String {
         switch self {
-        case .stopped: "Off"
-        case .starting: "Starting…"
-        case .running: "Bypass On"
-        case .failed: "Stopped with an Error"
+        case .stopped: String(localized: "Off")
+        case .starting: String(localized: "Starting…")
+        case .running: String(localized: "Bypass On")
+        case .failed: String(localized: "Stopped with an Error")
         }
     }
 

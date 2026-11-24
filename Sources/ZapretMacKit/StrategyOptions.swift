@@ -86,15 +86,15 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
     /// A short human summary for cards: "Split 1,midsld · Disorder".
     public var summary: String {
         var parts: [String] = []
-        if !tlsRecord.trimmed.isEmpty { parts.append("TLS records at \(tlsRecord.compact)") }
-        if !splitPositions.trimmed.isEmpty { parts.append("Split at \(splitPositions.compact)") }
-        if disorder { parts.append("Disorder") }
-        if oob { parts.append("OOB byte") }
+        if !tlsRecord.trimmed.isEmpty { parts.append(String(localized: "TLS records at \(tlsRecord.compact)", bundle: .main)) }
+        if !splitPositions.trimmed.isEmpty { parts.append(String(localized: "Split at \(splitPositions.compact)", bundle: .main)) }
+        if disorder { parts.append(String(localized: "Disorder", bundle: .main)) }
+        if oob { parts.append(String(localized: "OOB byte", bundle: .main)) }
         let http = [hostCase, domainCase, hostDot, hostTab, hostNoSpace, methodEOL, methodSpace, unixEOL]
             .filter { $0 }.count
-        if http > 0 { parts.append(http == 1 ? "1 HTTP trick" : "\(http) HTTP tricks") }
-        if !extra.isEmpty { parts.append("+\(extra.count) more") }
-        return parts.isEmpty ? "No changes to traffic" : parts.joined(separator: " · ")
+        if http > 0 { parts.append(String(localized: "\(http) HTTP tricks", bundle: .main)) }
+        if !extra.isEmpty { parts.append(String(localized: "+\(extra.count) more", bundle: .main)) }
+        return parts.isEmpty ? String(localized: "No changes to traffic", bundle: .main) : parts.joined(separator: " · ")
     }
 }
 

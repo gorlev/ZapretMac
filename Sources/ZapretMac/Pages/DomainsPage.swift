@@ -25,11 +25,11 @@ struct DomainsPage: View {
                     DomainRow(entry: entry)
                         .tag(entry.id)
                         .contextMenu {
-                            Button(entry.isEnabled ? "Turn Off" : "Turn On") {
+                            Button(entry.isEnabled ? String(localized: "Turn Off") : String(localized: "Turn On")) {
                                 entry.isEnabled.toggle()
                                 model.listsChanged()
                             }
-                            Button(showExcluded ? "Move to Sites to Unblock" : "Move to Never Touch") {
+                            Button(showExcluded ? String(localized: "Move to Sites to Unblock") : String(localized: "Move to Never Touch")) {
                                 entry.isExcluded.toggle()
                                 model.listsChanged()
                             }
@@ -42,11 +42,11 @@ struct DomainsPage: View {
             .overlay {
                 if entries.isEmpty {
                     ContentUnavailableView {
-                        Label(showExcluded ? "Nothing Excluded" : "No Sites Yet", systemImage: showExcluded ? "hand.raised" : "globe")
+                        Label(showExcluded ? String(localized: "Nothing Excluded") : String(localized: "No Sites Yet"), systemImage: showExcluded ? "hand.raised" : "globe")
                     } description: {
                         Text(showExcluded
-                             ? "Sites here are never changed, even with All sites on. Add banks or sites the strategy breaks."
-                             : "Add the sites that do not open, like youtube.com or discord.com. Paste many at once.")
+                             ? String(localized: "Sites here are never changed, even with All sites on. Add banks or sites the strategy breaks.")
+                             : String(localized: "Add the sites that do not open, like youtube.com or discord.com. Paste many at once."))
                     }
                 }
             }
@@ -87,7 +87,7 @@ struct DomainsPage: View {
                     added += model.addDomains(from: text, excluded: showExcluded)
                 }
             }
-            note = added == 1 ? "Added 1 site." : "Added \(added) sites."
+            note = String(localized: "Added \(added) sites.")
         }
         .onChange(of: showExcluded) { selection.removeAll(); note = nil }
         .onChange(of: model.addSitesRequest) { inputFocused = true }
@@ -98,7 +98,7 @@ struct DomainsPage: View {
         VStack(alignment: .leading, spacing: Space.sm) {
             HStack(spacing: Space.sm) {
                 TextField("Add sites", text: $input,
-                          prompt: Text(showExcluded ? "Add a site never to touch, like mybank.com" : "Add sites, like youtube.com discord.com"))
+                          prompt: Text(showExcluded ? String(localized: "Add a site never to touch, like mybank.com") : String(localized: "Add sites, like youtube.com discord.com")))
                     .textFieldStyle(.roundedBorder)
                     .focused($inputFocused)
                     .onSubmit(add)
@@ -122,7 +122,7 @@ struct DomainsPage: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(entries.count == 1 ? "1 site" : "\(entries.count) sites")
+                Text("\(entries.count) sites")
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
@@ -136,8 +136,8 @@ struct DomainsPage: View {
     private func add() {
         let count = model.addDomains(from: input, excluded: showExcluded)
         let parsed = Domains.parseList(input).count
-        if parsed == 0 { note = "That does not look like a site address."; return }
-        note = count == 0 ? "Already in the list." : (count == 1 ? "Added 1 site." : "Added \(count) sites.")
+        if parsed == 0 { note = String(localized: "That does not look like a site address."); return }
+        note = count == 0 ? String(localized: "Already in the list.") : String(localized: "Added \(count) sites.")
         input = ""
     }
 
@@ -160,7 +160,7 @@ private struct DomainRow: View {
                                      set: { entry.isEnabled = $0; model.listsChanged() }))
                 .toggleStyle(.checkbox)
                 .labelsHidden()
-                .help(entry.isEnabled ? "On: tpws uses this site" : "Off: kept in the list but not used")
+                .help(entry.isEnabled ? String(localized: "On: tpws uses this site") : String(localized: "Off: kept in the list but not used"))
             Image(systemName: entry.isExcluded ? "hand.raised.fill" : "globe")
                 .foregroundStyle(entry.isEnabled ? AnyShapeStyle(Palette.accentText) : AnyShapeStyle(.tertiary))
                 .frame(width: 20)

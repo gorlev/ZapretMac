@@ -42,8 +42,9 @@ public struct LogLine: Identifiable, Equatable, Sendable {
 public enum Uptime {
     public static func format(_ seconds: TimeInterval) -> String {
         let s = max(0, Int(seconds))
-        if s < 60 { return "\(s) s" }
-        if s < 3600 { return "\(s / 60) min" }
-        return String(format: "%d h %02d min", s / 3600, (s % 3600) / 60)
+        if s < 60 { return String(localized: "\(s) s", bundle: .main) }
+        if s < 3600 { return String(localized: "\(s / 60) min", bundle: .main) }
+        let minutes = String(format: "%02d", (s % 3600) / 60)
+        return String(localized: "\(s / 3600) h \(minutes) min", bundle: .main)
     }
 }

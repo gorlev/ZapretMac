@@ -59,6 +59,8 @@ if [[ -d "$here/Icon/AppIcon.icon" ]]; then
   fi
   cp -X "$car" "$here/Resources/AppIcon.icns" "$app/Contents/Resources/"
 fi
+# Translations: Localization/<lang>.json -> Resources/<lang>.lproj (checked first).
+python3 "$here/tools/l10n.py" build "$app/Contents/Resources" || { echo "localization check failed"; exit 1; }
 xattr -cr "$app"
 codesign --force --options runtime --sign "$identity" "$app/Contents/Helpers/tpws" 2>&1 | grep -v "replacing existing signature" || true
 codesign --force --sign "$identity" "$app" 2>&1 | grep -v "replacing existing signature" || true
