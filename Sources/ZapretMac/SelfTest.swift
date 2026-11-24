@@ -117,7 +117,7 @@ enum SelfTest {
             let before = model.engine.commandLine
             if let url = URL(string: "https://example.com") {
                 model.startFinder(url: url)
-                for _ in 0..<200 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
+                for _ in 0..<400 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
             }
             check("finding a strategy tests every one", model.finder.isDone, "\(model.finder.trials.map(\.status))")
             check("at least one strategy opens example.com", model.finder.workingCount > 0)

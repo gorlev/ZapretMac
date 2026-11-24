@@ -82,11 +82,18 @@ final class Engine {
         }
         self.process = process
         state = .starting
-        // tpws prints nothing on success in quiet mode: still running after a
-        // moment means the port is bound and it is ready.
+        // Running means the port takes connections, not just that tpws started:
+        // a site check right after turning on must not race the bind.
+        let port = command.port
         Task {
-            try? await Task.sleep(for: .milliseconds(600))
-            if generation == gen, state == .starting, process.isRunning { markRunning() }
+            for _ in 0..<60 {
+                guard generation == gen, state == .starting, process.isRunning else { return }
+                if await Task.detached(operation: { StrategyFinder.isListening(port) }).value {
+                    markRunning()
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(50))
+            }
         }
     }
 
@@ -118,9 +125,6 @@ final class Engine {
     private func receive(_ text: [String], generation gen: Int) {
         guard gen == generation else { return }
         append(text)
-        if state == .starting, text.contains(where: { $0.contains("socks mode") || $0.contains("Running as") }) {
-            markRunning()
-        }
     }
 
     private func append(_ text: [String]) {
