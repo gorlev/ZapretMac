@@ -21,16 +21,20 @@ final class Prefs {
 
     static let defaultPort = 1088
 
+    /// ZM_SLOT=<n>: a parallel worker's test runs get their own defaults and port.
+    static var slotNumber: Int { Int(ProcessInfo.processInfo.environment["ZM_SLOT"] ?? "") ?? 0 }
+    static var slotSuffix: String { slotNumber == 0 ? "" : ".slot\(slotNumber)" }
+
     private init() {
         if Store.isOverridden {
-            let suite = "com.gorlev.zapretmac.test"
+            let suite = "com.gorlev.zapretmac.test" + Self.slotSuffix
             UserDefaults().removePersistentDomain(forName: suite)
             defaults = UserDefaults(suiteName: suite)!
         } else {
             defaults = .standard
         }
         let d = defaults
-        port = (d.object(forKey: "port") as? Int) ?? (Store.isOverridden ? 19881 : Self.defaultPort)
+        port = (d.object(forKey: "port") as? Int) ?? (Store.isOverridden ? 19881 + Self.slotNumber * 10 : Self.defaultPort)
         strategyID = d.string(forKey: "strategy") ?? "preset:\(Preset.defaultID)"
         scope = Scope(rawValue: d.string(forKey: "scope") ?? "") ?? .allSites
         useSystemProxy = (d.object(forKey: "systemProxy") as? Bool) ?? !Store.isOverridden

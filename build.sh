@@ -9,7 +9,10 @@
 set -euo pipefail
 here=${0:A:h}
 name="ZapretMac"
-scratch="$HOME/Library/Developer/$name/build"
+# ZM_SLOT=<n> gives a parallel worker its own build folder and app copy
+# (~/Library/Developer/ZapretMac/slot-<n>/ZapretMac.app) instead of ~/Applications.
+slot="${ZM_SLOT:-}"
+scratch="$HOME/Library/Developer/$name/build${slot:+-$slot}"
 config=release
 [[ " $* " == *" --debug "* ]] && config=debug
 
@@ -44,7 +47,8 @@ if [[ ! -x "$tpws_dir/tpws" || -n "$(find "$here/Vendor/zapret/tpws" -newer "$tp
 fi
 
 app="$HOME/Applications/$name.app"
-mkdir -p "$HOME/Applications"
+[[ -n "$slot" ]] && app="$HOME/Library/Developer/$name/slot-$slot/$name.app"
+mkdir -p "${app:h}"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers"
 cp "$bin" "$app/Contents/MacOS/$name"
