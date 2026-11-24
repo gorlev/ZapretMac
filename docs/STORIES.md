@@ -94,22 +94,23 @@ Status: done
 As the user, I quit and reopen ZapretMac and it shows the same sidebar page.
 Acceptance:
 - [self] The sidebar page is saved and read back (real runs only).
-Status: todo
+Status: done
 
 ### S-031 Share a strategy as text
 As the user, I copy a strategy's tpws flags from its context menu, and paste flags into New Strategy to create one.
 Acceptance:
 - [unit] Pasted flags round-trip through StrategyOptions.
 - [manual] Copy Flags puts the command line on the clipboard.
-Status: todo
+Status: doing
 
 ## M5 Language
 
-### S-040 Use ZapretMac in Turkish
-As a Turkish user, I see every label, menu, and message in natural Turkish when my Mac is set to Turkish.
+### S-040 Use ZapretMac in my language
+As a user whose Mac is set to Turkish, German, Spanish, Italian, French, Brazilian Portuguese, or Russian, I see every label, menu, and message written naturally in that language; English stays the base.
 Acceptance:
-- [snap] All pages with APP_LANG=tr show Turkish text with no clipping.
-- [manual] A native speaker reads it as written in Turkish, not translated.
+- [unit] Every key in Localizable.xcstrings has a value in all eight languages, and format specifiers match the English ones.
+- [snap] All pages with APP_LANG=<code> show the language with no clipping.
+- [manual] A native speaker reads it as written in the language, not translated.
 Status: todo
 
 ## Later

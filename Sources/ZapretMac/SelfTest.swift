@@ -30,6 +30,12 @@ enum SelfTest {
 
             check("tpws is inside the app", Engine.binaryExists, Engine.binaryURL.path)
 
+            // The page is remembered in real runs only.
+            let savedPage = UserDefaults.standard.string(forKey: "sidebar.page")
+            model.sidebar = .log
+            check("test runs do not change the remembered page", UserDefaults.standard.string(forKey: "sidebar.page") == savedPage)
+            model.sidebar = .overview
+
             // Every built-in strategy is accepted by tpws.
             for preset in Preset.all {
                 let result = await Engine.dryRun(preset.options.arguments)

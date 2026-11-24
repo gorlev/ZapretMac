@@ -89,7 +89,11 @@ final class AppModel {
     let proxy: SystemProxy
     let finder = StrategyFinder()
     var showFinder = false
-    var sidebar: SidebarItem? = .overview
+    /// The page reopens where it was left. Test and snapshot runs start on Overview.
+    var sidebar: SidebarItem? = Store.isOverridden ? .overview
+        : SidebarItem(rawValue: UserDefaults.standard.string(forKey: "sidebar.page") ?? "") ?? .overview {
+        didSet { if !Store.isOverridden, let sidebar { UserDefaults.standard.set(sidebar.rawValue, forKey: "sidebar.page") } }
+    }
     var draft: StrategyDraft?
     /// Bumped by the Add Sites command; the Sites page focuses its field.
     var addSitesRequest = 0
