@@ -17,6 +17,11 @@ final class Engine {
     private(set) var recentHosts: [String] = []
     private(set) var hostsSeen: Set<String> = []
     private(set) var commandLine = ""
+    /// How many times tpws was restarted after quitting by itself.
+    private(set) var autoRestarts = 0
+    /// Called once tpws has quit by itself twice within a minute.
+    var onFailure: ((String) -> Void)?
+    var pid: Int32? { process?.processIdentifier }
 
     var isOn: Bool { state == .running || state == .starting }
 
@@ -25,6 +30,8 @@ final class Engine {
     /// Bumped on every start and stop, so output and exits from an old
     /// process never change the state of a new one.
     private var generation = 0
+    private var lastCommand: TPWSCommand?
+    private var recentCrashes: [Date] = []
     static let maxLines = 4000
 
     /// Contents/Helpers/tpws inside the app. TPWS_PATH overrides it.
@@ -45,6 +52,7 @@ final class Engine {
         }
         generation += 1
         let gen = generation
+        lastCommand = command
         connections = 0
         commandLine = command.commandLine(binary: Self.binaryURL.path)
         append(["$ " + commandLine])
@@ -136,7 +144,18 @@ final class Engine {
         process = nil
         startedAt = nil
         let lastError = lines.last(where: { $0.kind == .error })?.text
-        state = .failed(lastError ?? "tpws quit with code \(code).")
+        let reason = lastError ?? "tpws quit with code \(code)."
+        // Restart once; a second exit within a minute is a real failure.
+        recentCrashes = recentCrashes.filter { $0 > Date.now.addingTimeInterval(-60) }
+        if recentCrashes.isEmpty, let lastCommand {
+            recentCrashes.append(.now)
+            autoRestarts += 1
+            append(["tpws quit by itself (\(reason)). Restarting it."])
+            start(lastCommand)
+            return
+        }
+        state = .failed(reason)
+        onFailure?(reason)
     }
 
     // MARK: - One-off runs

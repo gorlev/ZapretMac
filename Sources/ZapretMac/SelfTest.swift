@@ -77,6 +77,25 @@ enum SelfTest {
             try? await Task.sleep(for: .milliseconds(800))
             check("restarting with the site list keeps it running", model.engine.state == .running, "\(model.engine.state)")
             check("the list scope passes the hostlist", model.command.arguments.contains("--hostlist=\(Store.hostlistURL.path)"))
+            // tpws quitting by itself is restarted once.
+            if let pid = model.engine.pid {
+                kill(pid, SIGKILL)
+                for _ in 0..<30 where !(model.engine.state == .running && model.engine.pid != pid) {
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+                check("tpws quitting by itself is restarted", model.engine.state == .running && model.engine.autoRestarts == 1,
+                      "\(model.engine.state), restarts \(model.engine.autoRestarts)")
+                if let second = model.engine.pid {
+                    kill(second, SIGKILL)
+                    try? await Task.sleep(for: .milliseconds(800))
+                    let failed = if case .failed = model.engine.state { true } else { false }
+                    check("a second quit within a minute is a failure", failed, "\(model.engine.state)")
+                    check("the menu bar shows a warning", model.engine.menuBarSymbol == "exclamationmark.shield")
+                }
+                model.turnOn()
+                for _ in 0..<30 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+            }
+
             // Find a strategy: runs beside the bypass without touching it.
             let before = model.engine.commandLine
             if let url = URL(string: "https://example.com") {

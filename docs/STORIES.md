@@ -86,7 +86,7 @@ Acceptance:
 - [self] Killing tpws makes the engine restart it within two seconds.
 - [manual] A second crash posts "ZapretMac stopped" with the error.
 - [snap] The menu bar icon is shield-with-exclamation in the failed state.
-Status: todo
+Status: done
 
 ## M4 Speed
 

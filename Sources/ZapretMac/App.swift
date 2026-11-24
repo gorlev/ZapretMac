@@ -73,8 +73,8 @@ struct ZapretMacApp: App {
             MenuBarContent()
                 .environment(model)
         } label: {
-            Image(systemName: model.engine.isOn ? "shield.lefthalf.filled" : "shield.slash")
-                .accessibilityLabel(model.engine.isOn ? "ZapretMac on" : "ZapretMac off")
+            Image(systemName: model.engine.menuBarSymbol)
+                .accessibilityLabel(model.engine.state.title)
         }
         .menuBarExtraStyle(.menu)
 

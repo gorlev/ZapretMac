@@ -97,6 +97,17 @@ struct StatusDot: View {
     }
 }
 
+extension Engine {
+    /// The menu bar shield: on, off, or a warning after a failure.
+    var menuBarSymbol: String {
+        switch state {
+        case .running, .starting: "shield.lefthalf.filled"
+        case .stopped: "shield.slash"
+        case .failed: "exclamationmark.shield"
+        }
+    }
+}
+
 extension Engine.State {
     var title: String {
         switch self {

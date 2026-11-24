@@ -103,6 +103,12 @@ final class AppModel {
     init(container: ModelContainer) {
         self.container = container
         proxy = SystemProxy(defaults: Prefs.shared.defaults)
+        engine.onFailure = { [weak self] reason in
+            guard let self else { return }
+            // Nothing listens on the port now: give apps their old proxy back.
+            if proxy.isApplied { Task { await self.proxy.restore() } }
+            if !Store.isOverridden { Notifier.post(title: "ZapretMac stopped", body: reason) }
+        }
     }
 
     private var context: ModelContext { container.mainContext }
