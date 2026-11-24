@@ -40,6 +40,8 @@ struct ZapretMacApp: App {
             CommandGroup(replacing: .newItem) {
                 Button("New Strategy…") { model.newStrategy() }
                     .keyboardShortcut("n")
+                Button("New Strategy from Clipboard") { model.newStrategyFromClipboard() }
+                    .keyboardShortcut("v", modifiers: [.command, .option])
                 Button("Add Sites…") { model.requestAddSites() }
                     .keyboardShortcut("n", modifiers: [.command, .shift])
             }

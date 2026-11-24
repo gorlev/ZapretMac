@@ -54,6 +54,17 @@ enum SelfTest {
             let exclude = (try? String(contentsOf: Store.excludeURL, encoding: .utf8)) ?? ""
             check("the exclude file has the excluded site", exclude == "apple.com\n", exclude)
 
+            // Strategies shared as text (the clipboard is put back after).
+            let savedClipboard = NSPasteboard.general.string(forType: .string)
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString("--split-pos=3,midsld --oob --mss=88", forType: .string)
+            let pasted = model.clipboardFlags
+            check("flags on the clipboard become options", pasted?.splitPositions == "3,midsld" && pasted?.oob == true && pasted?.extra == ["--mss=88"])
+            NSPasteboard.general.setString("hello", forType: .string)
+            check("other clipboard text is not flags", model.clipboardFlags == nil)
+            NSPasteboard.general.clearContents()
+            if let savedClipboard { NSPasteboard.general.setString(savedClipboard, forType: .string) }
+
             // Strategies
             var draft = StrategyDraft(name: "Test", options: StrategyOptions(commandLine: "--split-pos=2 --disorder"))
             let saved = model.save(draft)

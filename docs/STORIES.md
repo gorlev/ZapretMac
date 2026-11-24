@@ -101,7 +101,7 @@ As the user, I copy a strategy's tpws flags from its context menu, and paste fla
 Acceptance:
 - [unit] Pasted flags round-trip through StrategyOptions.
 - [manual] Copy Flags puts the command line on the clipboard.
-Status: doing
+Status: done
 
 ## M5 Language
 

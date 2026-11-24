@@ -21,6 +21,7 @@ struct StrategiesPage: View {
                         }
                         .contextMenu {
                             Button("Use") { model.choose(strategy: id) }
+                            Button("Copy Flags") { model.copyFlags(preset.commandLine) }
                             Button("Duplicate and Edit…") {
                                 model.newStrategy(from: preset.options, name: "\(preset.name) Copy")
                             }
@@ -37,6 +38,7 @@ struct StrategiesPage: View {
                         .contextMenu {
                             Button("Use") { model.choose(strategy: strategy.selectionID) }
                             Button("Edit…") { model.edit(strategy) }
+                            Button("Copy Flags") { model.copyFlags(strategy.commandLine) }
                             Button("Duplicate") {
                                 model.newStrategy(from: strategy.options, name: "\(strategy.name) Copy")
                             }

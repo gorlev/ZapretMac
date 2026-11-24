@@ -167,6 +167,23 @@ final class AppModel {
         draft = StrategyDraft(editing: nil, name: name, options: options)
     }
 
+    /// tpws flags on the clipboard, or nil when it holds something else.
+    var clipboardFlags: StrategyOptions? {
+        guard let text = NSPasteboard.general.string(forType: .string)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              text.hasPrefix("--"), text.count < 2000 else { return nil }
+        return StrategyOptions(commandLine: text)
+    }
+
+    func newStrategyFromClipboard() {
+        guard let options = clipboardFlags else { NSSound.beep(); return }
+        newStrategy(from: options, name: "")
+    }
+
+    func copyFlags(_ commandLine: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(commandLine, forType: .string)
+    }
+
     func edit(_ strategy: CustomStrategy) {
         draft = StrategyDraft(editing: strategy.uuid, name: strategy.name, options: strategy.options)
     }

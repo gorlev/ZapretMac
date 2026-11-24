@@ -86,6 +86,8 @@ struct StrategyEditor: View {
                     HStack {
                         Button("Check with tpws") { runCheck() }
                             .disabled(checking)
+                        Button("Paste Flags") { pasteFlags() }
+                            .help("Replace the options with tpws flags from the clipboard")
                         if checking { ProgressView().controlSize(.small) }
                         if let check {
                             Label(check.message, systemImage: check.ok ? "checkmark.circle.fill" : "xmark.octagon.fill")
@@ -117,6 +119,12 @@ struct StrategyEditor: View {
         .frame(width: 560)
         .noInitialFocus()
         .onChange(of: options) { check = nil }
+    }
+
+    private func pasteFlags() {
+        guard let pasted = model.clipboardFlags else { NSSound.beep(); return }
+        draft.options = pasted
+        extraText = pasted.extra.joined(separator: " ")
     }
 
     private func runCheck() {
