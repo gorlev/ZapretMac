@@ -2,9 +2,8 @@ import Foundation
 import SwiftData
 
 /// Sample data for snapshots: APP_SEED=1 with APP_STORE in /tmp fills an empty
-/// store with realistic items (short and long titles, starred and not).
-/// Replace these with your app's own types. Seed only what a person can
-/// create in the app, or the snapshots show features no one can use.
+/// store with sites and one custom strategy, then turns the bypass on (tpws
+/// on a test port, no system proxy), so the pages show real output.
 @MainActor
 enum SeedData {
     static func insertIfRequested(into model: AppModel) {
@@ -14,23 +13,23 @@ enum SeedData {
             return
         }
         let context = model.container.mainContext
-        guard ((try? context.fetchCount(FetchDescriptor<Item>())) ?? 0) == 0 else { return }
-        let samples: [(String, Bool)] = [
-            ("Book the dentist", false),
-            ("Read the article about local-first software and write down three ideas worth trying", true),
-            ("Renew passport", false),
-            ("Plan the weekend trip", true),
-            ("Call Anna", false),
-            ("Back up the photo library to the external drive before the trip", false),
-            ("Groceries", false),
-            ("Draft the quarterly review", true),
-        ]
-        for (index, sample) in samples.enumerated() {
-            let item = Item(title: sample.0)
-            item.isStarred = sample.1
-            item.createdAt = Date.now.addingTimeInterval(Double(-index) * 3_600)
-            context.insert(item)
-        }
+        guard ((try? context.fetchCount(FetchDescriptor<DomainEntry>())) ?? 0) == 0 else { return }
+        model.addDomains(from: "youtube.com googlevideo.com discord.com discord.gg discordapp.com roblox.com wattpad.com x.com",
+                         excluded: false)
+        model.addDomains(from: "apple.com icloud.com", excluded: true)
+        if let off = model.domains(excluded: false).first(where: { $0.domain == "wattpad.com" }) { off.isEnabled = false }
+        context.insert(CustomStrategy(name: "My ISP", commandLine: "--tlsrec=sniext+1 --split-pos=2,midsld --oob"))
         try? context.save()
+        model.prefs.useSystemProxy = false
+        model.turnOn()
+        // A little real traffic, so the log and the stats have something.
+        Task {
+            try? await Task.sleep(for: .seconds(0.8))
+            for site in ["https://example.com", "https://www.wikipedia.org", "https://github.com"] {
+                if let url = URL(string: site) { _ = await SiteCheck.fetch(url, socksPort: model.prefs.port) }
+            }
+            model.prefs.testURL = "https://example.com"
+            model.runCheck()
+        }
     }
 }

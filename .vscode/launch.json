@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:ZapretMac}",
+            "name": "Debug ZapretMac",
+            "target": "ZapretMac",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug ZapretMac"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:ZapretMac}",
+            "name": "Release ZapretMac",
+            "target": "ZapretMac",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release ZapretMac"
+        }
+    ]
+}

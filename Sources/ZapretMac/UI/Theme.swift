@@ -59,7 +59,7 @@ final class ThemeStore {
     /// only while the Mac's accent is Multicolor (System Settings >
     /// Appearance). Any other Mac accent wins. Example:
     /// Theme(id: "brand", name: "Brand", shades: .init(light: 0x8EEBC4, base: 0x2BC48A, deep: 0x0F7A55), darkText: true)
-    static let brand: Theme? = nil
+    static let brand: Theme? = Theme(id: "brand", name: "Teal", shades: .init(light: 0x8BE9F5, base: 0x06B6D4, deep: 0x0E7490), darkText: true)
 
     var themeID: String {
         didSet { UserDefaults.standard.set(themeID, forKey: "appearance.accent") }

@@ -4,16 +4,26 @@ import SwiftUI
 struct ContentView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openSettings) private var openSettings
+    @Query private var domains: [DomainEntry]
 
     var body: some View {
+        @Bindable var model = model
         NavigationSplitView {
             sidebar
-        } content: {
-            ItemList(page: model.sidebar ?? .all)
-                .navigationSplitViewColumnWidth(min: 260, ideal: 320)
         } detail: {
-            ItemDetail()
+            switch model.sidebar ?? .overview {
+            case .overview: OverviewPage()
+            case .strategies: StrategiesPage()
+            case .domains: DomainsPage()
+            case .log: LogPage()
+            }
         }
+        .sheet(item: $model.draft) { draft in
+            StrategyEditor(draft: draft)
+                .environment(model)
+                .themed()
+        }
+        .noInitialFocus()
         .task {
             SeedData.insertIfRequested(into: model)
             SelfTest.runIfRequested(model: model)
@@ -23,69 +33,75 @@ struct ContentView: View {
 
     private var sidebar: some View {
         @Bindable var model = model
-        return List(SidebarItem.allCases, selection: $model.sidebar) { page in
-            Label(page.title, systemImage: page.symbol)
-                .tag(page)
-        }
-        .navigationSplitViewColumnWidth(min: 180, ideal: 212)
-    }
-}
-
-struct ItemList: View {
-    @Environment(AppModel.self) private var model
-    @Environment(\.modelContext) private var context
-    @Query(sort: \Item.createdAt, order: .reverse) private var items: [Item]
-    let page: SidebarItem
-
-    private var visible: [Item] {
-        page == .starred ? items.filter(\.isStarred) : items
-    }
-
-    var body: some View {
-        @Bindable var model = model
-        List(visible, selection: $model.selection) { item in
-            Label(item.title, systemImage: item.isStarred ? "star.fill" : "circle")
-                .tag(item.id)
-                .contextMenu {
-                    Button("Delete", role: .destructive) { context.delete(item) }
-                }
-        }
-        .overlay {
-            if visible.isEmpty {
-                ContentUnavailableView(
-                    "No Items",
-                    systemImage: page.symbol,
-                    description: Text("Press Command-N to add one.")
-                )
+        return List(selection: $model.sidebar) {
+            ForEach(SidebarItem.allCases) { page in
+                Label(page.title, systemImage: page.symbol)
+                    .badge(badge(for: page))
+                    .tag(page)
             }
         }
-        .navigationTitle(page.title)
-        .toolbar {
-            ToolbarItem {
-                Button("New Item", systemImage: "plus") { model.addItem() }
-                    .help("Add an item (Command-N)")
-            }
+        .safeAreaInset(edge: .bottom) { SidebarStatus() }
+        .navigationSplitViewColumnWidth(min: 190, ideal: 212)
+    }
+
+    private func badge(for page: SidebarItem) -> Int {
+        switch page {
+        case .domains: domains.filter { !$0.isExcluded && $0.isEnabled }.count
+        default: 0
         }
     }
 }
 
-struct ItemDetail: View {
+/// A small status line at the foot of the sidebar: is the bypass on?
+private struct SidebarStatus: View {
     @Environment(AppModel.self) private var model
-    @Query private var items: [Item]
 
     var body: some View {
-        if let item = items.first(where: { $0.id == model.selection }) {
-            @Bindable var item = item
-            Form {
-                TextField("Title", text: $item.title)
-                Toggle("Starred", isOn: $item.isStarred)
-                TextField("Notes", text: $item.notes, axis: .vertical)
-                    .lineLimit(4...)
+        HStack(spacing: Space.sm) {
+            StatusDot(state: model.engine.state)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(model.engine.state.title)
+                    .font(.callout.weight(.medium))
+                Text(model.engine.isOn ? "127.0.0.1:\(String(model.prefs.port))" : "Not running")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
-            .formStyle(.grouped)
-            } else {
-            ContentUnavailableView("No Selection", systemImage: "sidebar.right")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, Space.lg)
+        .padding(.vertical, Space.md)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct StatusDot: View {
+    let state: Engine.State
+
+    var body: some View {
+        Circle()
+            .fill(state.color)
+            .frame(width: 8, height: 8)
+            .shadow(color: state.color.opacity(state == .running ? 0.6 : 0), radius: 4)
+    }
+}
+
+extension Engine.State {
+    var title: String {
+        switch self {
+        case .stopped: "Off"
+        case .starting: "Starting…"
+        case .running: "Bypass On"
+        case .failed: "Stopped with an Error"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .stopped: Color.secondary.opacity(0.5)
+        case .starting: .orange
+        case .running: .green
+        case .failed: .red
+        }
     }
 }

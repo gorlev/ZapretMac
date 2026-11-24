@@ -1,0 +1,41 @@
+import Foundation
+import Observation
+import ZapretMacKit
+
+/// The app's choices, saved in UserDefaults. Test, seed, and snapshot runs
+/// (APP_STORE set) use their own suite, so they never change the real ones.
+@Observable
+final class Prefs {
+    static let shared = Prefs()
+
+    let defaults: UserDefaults
+
+    var port: Int { didSet { defaults.set(port, forKey: "port") } }
+    /// "preset:<id>" or "custom:<uuid>".
+    var strategyID: String { didSet { defaults.set(strategyID, forKey: "strategy") } }
+    var scope: Scope { didSet { defaults.set(scope.rawValue, forKey: "scope") } }
+    var useSystemProxy: Bool { didSet { defaults.set(useSystemProxy, forKey: "systemProxy") } }
+    var startOnLaunch: Bool { didSet { defaults.set(startOnLaunch, forKey: "startOnLaunch") } }
+    var verboseLog: Bool { didSet { defaults.set(verboseLog, forKey: "verboseLog") } }
+    var testURL: String { didSet { defaults.set(testURL, forKey: "testURL") } }
+
+    static let defaultPort = 1088
+
+    private init() {
+        if Store.isOverridden {
+            let suite = "com.gorlev.zapretmac.test"
+            UserDefaults().removePersistentDomain(forName: suite)
+            defaults = UserDefaults(suiteName: suite)!
+        } else {
+            defaults = .standard
+        }
+        let d = defaults
+        port = (d.object(forKey: "port") as? Int) ?? (Store.isOverridden ? 19881 : Self.defaultPort)
+        strategyID = d.string(forKey: "strategy") ?? "preset:\(Preset.defaultID)"
+        scope = Scope(rawValue: d.string(forKey: "scope") ?? "") ?? .allSites
+        useSystemProxy = (d.object(forKey: "systemProxy") as? Bool) ?? !Store.isOverridden
+        startOnLaunch = d.bool(forKey: "startOnLaunch")
+        verboseLog = (d.object(forKey: "verboseLog") as? Bool) ?? true
+        testURL = d.string(forKey: "testURL") ?? "https://discord.com"
+    }
+}

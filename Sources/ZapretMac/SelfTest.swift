@@ -6,6 +6,7 @@ import ZapretMacKit
 /// prints PASS or FAIL per check, and quits with exit code 0 or 1.
 ///   APP_STORE=/tmp/ZapretMac-self.store ~/Applications/ZapretMac.app/Contents/MacOS/ZapretMac --selftest
 /// (tools/selftest.sh does this.) Add a check for every story with logic.
+/// It never changes the system proxy.
 @MainActor
 enum SelfTest {
     static var requested: Bool { CommandLine.arguments.contains("--selftest") }
@@ -25,22 +26,59 @@ enum SelfTest {
         }
         Task {
             try? await Task.sleep(for: .seconds(0.5))
-            let context = model.container.mainContext
-            func items() -> [Item] { (try? context.fetch(FetchDescriptor<Item>())) ?? [] }
+            model.prefs.useSystemProxy = false
 
-            let before = items().count
-            model.addItem()
-            check("New Item adds one item", items().count == before + 1)
-            check("the new item is selected", model.selection != nil)
+            check("tpws is inside the app", Engine.binaryExists, Engine.binaryURL.path)
 
-            if let item = items().first(where: { $0.id == model.selection }) {
-                item.isStarred.toggle()
-                check("starring an item marks it starred", item.isStarred)
-                context.delete(item)
-                try? context.save()
-                check("deleting the item removes it", items().count == before)
+            // Every built-in strategy is accepted by tpws.
+            for preset in Preset.all {
+                let result = await Engine.dryRun(preset.options.arguments)
+                check("tpws accepts \(preset.name)", result.ok, result.output)
             }
-            check("titles are cleaned", ItemTitle.clean("  Buy   milk ") == "Buy milk")
+            let bad = await Engine.dryRun(["--split-pos=nonsense"])
+            check("tpws refuses bad flags", !bad.ok)
+
+            // Sites
+            let added = model.addDomains(from: "https://www.YouTube.com/x, discord.com\ndiscord.com", excluded: false)
+            check("pasting sites adds each once", added == 2, "added \(added)")
+            check("adding a known site adds nothing", model.addDomains(from: "youtube.com", excluded: false) == 0)
+            model.addDomains(from: "apple.com", excluded: true)
+            let hostlist = (try? String(contentsOf: Store.hostlistURL, encoding: .utf8)) ?? ""
+            check("the hostlist file has the sites", hostlist == "discord.com\nyoutube.com\n", hostlist)
+            let exclude = (try? String(contentsOf: Store.excludeURL, encoding: .utf8)) ?? ""
+            check("the exclude file has the excluded site", exclude == "apple.com\n", exclude)
+
+            // Strategies
+            var draft = StrategyDraft(name: "Test", options: StrategyOptions(commandLine: "--split-pos=2 --disorder"))
+            let saved = model.save(draft)
+            check("saving a strategy selects it", model.prefs.strategyID == saved.selectionID)
+            check("the active strategy uses its flags", model.activeStrategy.arguments == ["--split-pos=2", "--disorder"])
+            draft.editing = saved.uuid
+            draft.name = "Renamed"
+            model.save(draft)
+            check("editing keeps one strategy", model.customStrategies().count == 1)
+            model.delete(saved)
+            check("deleting the active strategy falls back to the default", model.prefs.strategyID == "preset:\(Preset.defaultID)")
+
+            // On and off, with real traffic through tpws.
+            model.prefs.scope = .allSites
+            model.turnOn()
+            for _ in 0..<30 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+            check("turning on starts tpws", model.engine.state == .running, "\(model.engine.state)")
+            if let url = URL(string: "https://example.com") {
+                let outcome = await SiteCheck.fetch(url, socksPort: model.prefs.port)
+                check("a site opens through tpws", outcome.isOK, "\(outcome)")
+            }
+            try? await Task.sleep(for: .milliseconds(300))
+            check("the log counts the connection", model.engine.connections > 0)
+            check("the log names the site", model.engine.hostsSeen.contains("example.com"), "\(model.engine.hostsSeen)")
+            model.prefs.scope = .listOnly
+            model.restartIfRunning()
+            try? await Task.sleep(for: .milliseconds(800))
+            check("restarting with the site list keeps it running", model.engine.state == .running, "\(model.engine.state)")
+            check("the list scope passes the hostlist", model.command.arguments.contains("--hostlist=\(Store.hostlistURL.path)"))
+            model.turnOff()
+            check("turning off stops tpws", model.engine.state == .stopped)
 
             print(failures == 0 ? "SELFTEST PASS \(count) checks" : "SELFTEST FAIL \(failures) of \(count) checks")
             finish(code: failures == 0 ? 0 : 1)

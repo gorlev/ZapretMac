@@ -32,12 +32,25 @@ if [[ -n "$stale" ]]; then
   exit 1
 fi
 
+# tpws, zapret's bypass engine, built from Vendor/zapret/tpws as a universal
+# binary. Rebuilt only when its sources change.
+tpws_dir="$HOME/Library/Developer/$name/tpws"
+if [[ ! -x "$tpws_dir/tpws" || -n "$(find "$here/Vendor/zapret/tpws" -newer "$tpws_dir/tpws" -type f | head -1)" ]]; then
+  echo "building tpws"
+  mkdir -p "$tpws_dir"
+  rsync -a --delete --exclude tpws "$here/Vendor/zapret/tpws/" "$tpws_dir/"
+  rm -f "$tpws_dir/tpws"
+  make -s -C "$tpws_dir" mac >/dev/null 2>"$tpws_dir/build.log" || { cat "$tpws_dir/build.log"; echo "tpws build failed"; exit 1; }
+fi
+
 app="$HOME/Applications/$name.app"
 mkdir -p "$HOME/Applications"
 rm -rf "$app"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers"
 cp "$bin" "$app/Contents/MacOS/$name"
-sed -e "s/__BUILD__/$(date +%Y%m%d%H%M)/" "$here/Info.plist.in" > "$app/Contents/Info.plist"
+cp "$tpws_dir/tpws" "$app/Contents/Helpers/tpws"
+commit=$(cat "$here/Vendor/zapret/COMMIT" 2>/dev/null || echo unknown)
+sed -e "s/__BUILD__/$(date +%Y%m%d%H%M)/" -e "s/__ZAPRET_COMMIT__/$commit/" "$here/Info.plist.in" > "$app/Contents/Info.plist"
 # The icon: Icon/AppIcon.icon -> Resources/Assets.car + AppIcon.icns, rebuilt when it changed.
 if [[ -d "$here/Icon/AppIcon.icon" ]]; then
   car="$here/Resources/Assets.car"
@@ -47,6 +60,7 @@ if [[ -d "$here/Icon/AppIcon.icon" ]]; then
   cp -X "$car" "$here/Resources/AppIcon.icns" "$app/Contents/Resources/"
 fi
 xattr -cr "$app"
+codesign --force --options runtime --sign "$identity" "$app/Contents/Helpers/tpws" 2>&1 | grep -v "replacing existing signature" || true
 codesign --force --sign "$identity" "$app" 2>&1 | grep -v "replacing existing signature" || true
 echo "installed $app (signed: ${identity})"
 
