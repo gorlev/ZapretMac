@@ -113,13 +113,113 @@ Acceptance:
 - [manual] A native speaker reads it as written in the language, not translated.
 Status: done
 
-## Later
-- Transparent pf mode with a privileged helper (no proxy setup per app)
-- A PAC file so only listed sites use the proxy
-- Download community hostlists from a URL
-- Global shortcut for the switch
+## M6 Find what works, like blockcheck
+
+blockcheck.sh skips nfqws on macOS (`SKIP_PKTWS=1` for Darwin) and runs only its tpws tests, so its whole tpws matrix applies here. Its macOS rules: `--oob` and `--disorder` together are tested only on Linux ("other systems retransmit oob byte without URG tcp flag and poison tcp stream"), `--mss` only on Linux, `--fix-seg` only on Linux.
+
+### S-090 Scan thoroughly, like blockcheck
+As the user, I pick Quick or Thorough in Find a Strategy. Quick tries the built-in strategies (today's behavior). Thorough runs blockcheck's tpws matrix for HTTPS: split positions `2`, `1`, `sniext+1`, `sniext+4`, `host+1`, `midsld`, `1,midsld`, `1,sniext+1,host+1,midsld,endhost-1`, and TLS records `--tlsrec=midsld`, `--tlsrec=sniext+1 --split-pos=midsld`, `--tlsrec=sniext+4 --split-pos=midsld`, `--tlsrec=sniext+1 --split-pos=1,midsld`, `--tlsrec=sniext+4 --split-pos=1,midsld`, each alone, with `--oob`, and with `--disorder` (39 tries). For an http:// address it runs the HTTP set: `--hostcase`, `--hostspell=hoSt`, `--hostdot`, `--hosttab`, `--hostnospace`, `--domcase`, `--hostpad=1024…16384`, splits `method+2`, `midsld`, `method+2,midsld` (alone, with `--hostcase`, `--oob`, `--disorder`), `--methodspace`, `--unixeol`, `--methodeol`.
+Screens: finder-light.png (Thorough results)
+Acceptance:
+- [unit] The Kit builds exactly blockcheck's HTTPS and HTTP lists, never pairing `--oob` with `--disorder` and never adding `--mss`.
+- [self] A thorough scan of example.com finishes, lists every try, and leaves the bypass running unchanged.
+- [snap] Rows show the flags under a short name; a progress line says "Try 12 of 39".
+Status: todo
+
+### S-091 Save a strategy the scan found
+As the user, I click "Save as Strategy…" on any working row, and the editor opens with those flags and a suggested name.
+Depends: S-090
+Acceptance:
+- [self] Saving a found row creates a custom strategy with the same flags and selects it.
+Status: todo
+
+### S-092 Check several sites at once
+As the user, I paste a few blocked sites (one per line) into Find a Strategy; each strategy is tried on all of them, and a row works only if every site opens.
+Depends: S-090
+Acceptance:
+- [unit] A trial with sites A and B is "works" only if both open; its time is the slowest.
+- [snap] Each row shows "2 of 3 sites" when some failed.
+Status: todo
+
+### S-093 Use one strategy for HTTP and another for HTTPS
+As the user, when the scan finds the best HTTP and the best HTTPS strategy separately, I save them as one strategy that tpws applies per port (two profiles joined with `--new`, `--filter-tcp=80` and `--filter-tcp=443`).
+Depends: S-090
+Acceptance:
+- [unit] Two option sets join into one argument list with `--filter-tcp=80 … --new --filter-tcp=443 …`, and parse back.
+- [self] tpws accepts the joined flags (dry run).
+Status: todo
+
+### S-094 More built-in strategies from blockcheck
+As the user, I find four more ready-made strategies that blockcheck tries early: TLS record in the middle of the domain (`--tlsrec=midsld`), split at the server-name field (`--split-pos=sniext+1`), multi-split (`--split-pos=1,sniext+1,host+1,midsld,endhost-1`), and Host padding for plain HTTP (`--hostpad=1024`).
+Acceptance:
+- [self] tpws accepts every new preset (dry run).
+- [snap] The Strategies grid shows ten cards, names and blurbs in all eight languages.
+Status: todo
+
+### S-095 The editor knows what macOS can and cannot do
+As the user, the strategy editor warns me when I turn on both "out-of-band byte" and "disorder" (they break connections on macOS), never suggests `--mss` (Linux only), and offers the two HTTP options it lacks: Host spelling (`--hostspell`) and Host padding (`--hostpad`).
+Acceptance:
+- [unit] StrategyOptions round-trips `--hostspell=hoSt` and `--hostpad=2048`.
+- [snap] Turning on both toggles shows an orange warning under them.
+Status: todo
+
+## M7 System
+
+### S-070 Subscribe to a community site list
+As the user, I paste the address of a hostlist (a text file with one domain per line, gzip allowed, like zapret's own lists) under Sites > Subscriptions; ZapretMac downloads it and uses it with My list.
+Acceptance:
+- [unit] A downloaded list is parsed with the same rules as pasted sites; gzip is unpacked.
+- [self] A list served from a local test file adds its domains to the hostlist file tpws reads.
+- [snap] Subscriptions shows each list with its domain count and when it was last updated.
+Status: todo
+
+### S-071 Keep subscribed lists fresh
+As the user, subscribed lists update once a day in the background and when I click Update Now; a failed download keeps the last good copy.
+Depends: S-070
+Acceptance:
+- [self] A failed refresh keeps the old domains and shows the error on the row.
+Status: todo
+
+### S-072 Send only listed sites through the proxy
+As the user, with My list and System proxy on, only the sites in my lists go through tpws; everything else connects directly (a PAC file served on 127.0.0.1, set with `networksetup -setautoproxyurl`, restored on stop).
+Acceptance:
+- [unit] The PAC script returns the SOCKS proxy for a listed domain and its subdomains, DIRECT for others.
+- [manual] Safari opens a listed site through tpws and an unlisted one directly.
+Status: todo
+
+### S-073 Turn the bypass on and off from anywhere
+As the user, I set a global shortcut in Settings and press it in any app to turn the bypass on or off; a small HUD says which.
+Acceptance:
+- [manual] The shortcut works with another app in front.
+- [snap] Settings > General shows the shortcut recorder.
+Status: todo
+
+## M8 Transparent mode
+
+### S-080 Install the privileged helper
+As the user, I turn on Transparent mode once and approve ZapretMac's helper in System Settings > Login Items; the helper runs as root and only accepts requests from ZapretMac.
+Acceptance:
+- [manual] Approving the helper in System Settings lets ZapretMac reach it; removing it turns Transparent mode off.
+- [self] The app reports the helper's state (not installed, needs approval, ready).
+Status: todo
+
+### S-081 Bypass without any proxy setting
+As the user, in Transparent mode every app's traffic to ports 80 and 443 goes through tpws without a proxy: the helper runs tpws as root with `--port … --user=root` and pf `rdr`/`route-to` rules, as zapret's macOS install does.
+Depends: S-080
+Acceptance:
+- [manual] curl without any proxy opens a blocked site in Transparent mode.
+- [self] Turning off removes ZapretMac's pf anchor and stops tpws.
+Status: todo
+
+### S-082 Recover pf after a crash
+As the user, if ZapretMac or the helper quits unexpectedly in Transparent mode, the pf rules are removed so my internet keeps working.
+Depends: S-081
+Acceptance:
+- [manual] Killing ZapretMac while on leaves no ZapretMac pf rules after the next launch.
+Status: todo
 
 ## Dropped
 - Accounts, sync, telemetry: a local tool for one person.
 - nfqws / UDP / QUIC: zapret does not support it on macOS.
-- Full blockcheck.sh port: S-020 covers the useful part for tpws.
+- nfqws strategies from blockcheck (fake, fakedsplit, syndata, seqovl, ipfrag): they need packet interception that zapret does not support on macOS.
+- `--mss`, `--fix-seg`, and `--oob` together with `--disorder`: blockcheck itself skips them outside Linux.
