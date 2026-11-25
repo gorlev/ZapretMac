@@ -240,6 +240,14 @@ private struct TrialRow<Action: View>: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
+                if trial.worksOnlyWithTLS13 {
+                    Text("Works in browsers; some older apps may not get through.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .help("This strategy works with TLS 1.3, which browsers use, but not with TLS 1.2, which some older apps still use.")
+                }
             }
             Spacer(minLength: Space.sm)
             if trial.versions.isEmpty {

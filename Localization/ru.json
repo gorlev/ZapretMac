@@ -485,5 +485,7 @@
   "IP ranges blocked in Russia, summarized into subnets.": "IP-диапазоны, заблокированные в России, объединённые в подсети.",
   "IP ranges blocked in Russia: blocked addresses and subnets in one list.": "IP-диапазоны, заблокированные в России: адреса и подсети в одном списке.",
   "IP addresses blocked in Russia, joined into /24 ranges.": "IP-адреса, заблокированные в России, объединённые в диапазоны /24.",
-  "IP addresses blocked in Russia, joined into ranges from /32 to /22.": "IP-адреса, заблокированные в России, объединённые в диапазоны от /32 до /22."
+  "IP addresses blocked in Russia, joined into ranges from /32 to /22.": "IP-адреса, заблокированные в России, объединённые в диапазоны от /32 до /22.",
+  "Works in browsers; some older apps may not get through.": "Работает в браузерах; некоторые старые приложения могут не пройти.",
+  "This strategy works with TLS 1.3, which browsers use, but not with TLS 1.2, which some older apps still use.": "Эта стратегия работает с TLS 1.3, который используют браузеры, но не с TLS 1.2, на котором до сих пор работают некоторые старые приложения."
 }

@@ -457,5 +457,7 @@
   "IP ranges blocked in Russia, summarized into subnets.": "Rusya'da engellenen IP aralıkları, alt ağlarda özetlenmiş.",
   "IP ranges blocked in Russia: blocked addresses and subnets in one list.": "Rusya'da engellenen IP aralıkları: engellenen adresler ve alt ağlar tek listede.",
   "IP addresses blocked in Russia, joined into /24 ranges.": "Rusya'da engellenen IP adresleri, /24 aralıklarında birleştirilmiş.",
-  "IP addresses blocked in Russia, joined into ranges from /32 to /22.": "Rusya'da engellenen IP adresleri, /32 ile /22 arası aralıklarda birleştirilmiş."
+  "IP addresses blocked in Russia, joined into ranges from /32 to /22.": "Rusya'da engellenen IP adresleri, /32 ile /22 arası aralıklarda birleştirilmiş.",
+  "Works in browsers; some older apps may not get through.": "Tarayıcılarda çalışır; bazı eski uygulamalarda çalışmayabilir.",
+  "This strategy works with TLS 1.3, which browsers use, but not with TLS 1.2, which some older apps still use.": "Bu strateji tarayıcıların kullandığı TLS 1.3 ile çalışıyor, ancak bazı eski uygulamaların hâlâ kullandığı TLS 1.2 ile çalışmıyor."
 }

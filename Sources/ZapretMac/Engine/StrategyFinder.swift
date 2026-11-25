@@ -54,6 +54,18 @@ final class StrategyFinder {
     /// The hosts as one line, for messages.
     var site: String { sites.joined(separator: ", ") }
     var ranked: [Trial] { Trial.ranked(trials) }
+
+    /// Snapshots only: makes a finished scan row look like it worked with
+    /// TLS 1.3 alone, to show that row's note without a real filter.
+    func pretendTLS12FailedForSnapshot(at index: Int) {
+        guard trials.indices.contains(index), trials[index].works else { return }
+        let versions = trials[index].versions.map { result in
+            result.version == .tls12
+                ? VersionResult(version: .tls12, sites: result.sites.map { SiteAttempt(site: $0.site, result: .fails("Connection reset")) })
+                : result
+        }
+        trials[index].finish(versions: versions)
+    }
     var isDone: Bool { !isRunning && !trials.isEmpty && trials.allSatisfy { $0.status != .waiting && $0.status != .testing } }
     var workingCount: Int { trials.filter(\.works).count }
     var finishedCount: Int { trials.filter { $0.status != .waiting && $0.status != .testing }.count }

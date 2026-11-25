@@ -208,17 +208,17 @@
   },
   "No free port": {
     "en": "No free port",
-    "where": "Sources/ZapretMac/Engine/StrategyFinder.swift:187",
+    "where": "Sources/ZapretMac/Engine/StrategyFinder.swift:199",
     "line": "guard let port = helpers.reservePort() else { return allFail(String(localized: \"No free port\")) }"
   },
   "tpws did not start": {
     "en": "tpws did not start",
-    "where": "Sources/ZapretMac/Engine/StrategyFinder.swift:194",
+    "where": "Sources/ZapretMac/Engine/StrategyFinder.swift:206",
     "line": "return allFail(String(localized: \"tpws did not start\"))"
   },
   "tpws refused these flags": {
     "en": "tpws refused these flags",
-    "where": "Sources/ZapretMac/Engine/StrategyFinder.swift:206",
+    "where": "Sources/ZapretMac/Engine/StrategyFinder.swift:218",
     "line": "guard process.isRunning else { return allFail(String(localized: \"tpws refused these flags\")) }"
   },
   "Cancelled.": {
@@ -771,6 +771,16 @@
     "where": "Sources/ZapretMac/Pages/FinderSheet.swift:211",
     "line": "return String(localized: \"\\(finder.workingCount) strategies open \\(finder.site).\")"
   },
+  "Works in browsers; some older apps may not get through.": {
+    "en": "Works in browsers; some older apps may not get through.",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:244",
+    "line": "Text(\"Works in browsers; some older apps may not get through.\")"
+  },
+  "This strategy works with TLS 1.3, which browsers use, but not with TLS 1.2, which some older apps still use.": {
+    "en": "This strategy works with TLS 1.3, which browsers use, but not with TLS 1.2, which some older apps still use.",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:248",
+    "line": ".help(\"This strategy works with TLS 1.3, which browsers use, but not with TLS 1.2, which some older apps still use.\")"
+  },
   "Scan": {
     "en": "Scan",
     "where": "Sources/ZapretMac/Pages/FinderSheet.swift:26",
@@ -779,26 +789,26 @@
   },
   "Testing…": {
     "en": "Testing…",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:262",
-    "line": "case .testing: Text(\"Testing…\").foregroundStyle(.secondary)"
-  },
-  "%lld ms": {
-    "en": "%lld ms",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:265",
-    "line": "Text(\"\\(ms) ms\").foregroundStyle(.secondary).monospacedDigit().fixedSize()",
-    "note": "Milliseconds after a response time, short unit."
-  },
-  "Opened %lld of %lld": {
-    "en": "Opened %lld of %lld",
     "where": "Sources/ZapretMac/Pages/FinderSheet.swift:269",
-    "line": "Text(\"Opened \\(trial.openCount) of \\(trial.sites.count)\").foregroundStyle(.secondary).monospacedDigit().fixedSize()",
-    "note": "Small text on a result row: how many of the tested sites opened, e.g. 'Opened 2 of 3'."
+    "line": "case .testing: Text(\"Testing…\").foregroundStyle(.secondary)"
   },
   "Quick": {
     "en": "Quick",
     "where": "Sources/ZapretMac/Pages/FinderSheet.swift:27",
     "line": "Text(\"Quick\").tag(ScanDepth.quick)",
     "note": "Segmented control in Find a Strategy: try only the built-in and the user's strategies. One short word."
+  },
+  "%lld ms": {
+    "en": "%lld ms",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:272",
+    "line": "Text(\"\\(ms) ms\").foregroundStyle(.secondary).monospacedDigit().fixedSize()",
+    "note": "Milliseconds after a response time, short unit."
+  },
+  "Opened %lld of %lld": {
+    "en": "Opened %lld of %lld",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:276",
+    "line": "Text(\"Opened \\(trial.openCount) of \\(trial.sites.count)\").foregroundStyle(.secondary).monospacedDigit().fixedSize()",
+    "note": "Small text on a result row: how many of the tested sites opened, e.g. 'Opened 2 of 3'."
   },
   "Thorough": {
     "en": "Thorough",
@@ -808,24 +818,24 @@
   },
   "%@: opens in %lld ms": {
     "en": "%@: opens in %lld ms",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:285",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:292",
     "line": "case .opens(let ms): String(localized: \"\\(label): opens in \\(ms) ms\")",
     "note": "One site's result in a tooltip: site name opened in so many milliseconds."
   },
   "%@: %@": {
     "en": "%@: %@",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:286",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:293",
     "line": "case .fails(let reason): String(localized: \"\\(label): \\(reason)\")",
     "note": "One site's result in a tooltip: site name, then the reason it failed."
   },
   "works": {
     "en": "works",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:322",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:329",
     "line": ".accessibilityLabel(result.opens ? Text(\"works\") : Text(\"fails\"))"
   },
   "fails": {
     "en": "fails",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:322",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:329",
     "line": ".accessibilityLabel(result.opens ? Text(\"works\") : Text(\"fails\"))"
   },
   "Repeat each try": {
@@ -845,13 +855,13 @@
   },
   "In use": {
     "en": "In use",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:375",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:382",
     "line": "Label(\"In use\", systemImage: \"checkmark\")",
     "note": "Small tag on a strategy card: this is the strategy currently used."
   },
   "Use": {
     "en": "Use",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:380",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:387",
     "line": "Button(\"Use\", action: use)",
     "note": "Small button on a row: start using this strategy."
   },
@@ -862,7 +872,7 @@
   },
   "Opens · %lld · %lld ms": {
     "en": "Opens · %lld · %lld ms",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:393",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:400",
     "line": "Label(\"Opens · \\(status) · \\(ms) ms\", systemImage: \"checkmark.circle.fill\")",
     "note": "Result of opening a site: 'opens' · HTTP status code · response time."
   },

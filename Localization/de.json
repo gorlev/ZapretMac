@@ -457,5 +457,7 @@
   "IP ranges blocked in Russia, summarized into subnets.": "In Russland gesperrte IP-Bereiche, zu Subnetzen zusammengefasst.",
   "IP ranges blocked in Russia: blocked addresses and subnets in one list.": "In Russland gesperrte IP-Bereiche: gesperrte Adressen und Subnetze in einer Liste.",
   "IP addresses blocked in Russia, joined into /24 ranges.": "In Russland gesperrte IP-Adressen, zu /24-Bereichen zusammengefasst.",
-  "IP addresses blocked in Russia, joined into ranges from /32 to /22.": "In Russland gesperrte IP-Adressen, zu Bereichen von /32 bis /22 zusammengefasst."
+  "IP addresses blocked in Russia, joined into ranges from /32 to /22.": "In Russland gesperrte IP-Adressen, zu Bereichen von /32 bis /22 zusammengefasst.",
+  "Works in browsers; some older apps may not get through.": "Funktioniert im Browser; manche ältere Apps kommen evtl. nicht durch.",
+  "This strategy works with TLS 1.3, which browsers use, but not with TLS 1.2, which some older apps still use.": "Diese Strategie funktioniert mit TLS 1.3, das Browser verwenden, aber nicht mit TLS 1.2, das manche ältere Apps noch nutzen."
 }

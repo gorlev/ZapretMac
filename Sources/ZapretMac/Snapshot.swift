@@ -158,6 +158,10 @@ enum Snapshot {
                     try? await Task.sleep(for: .milliseconds(100))
                 }
                 model.finder.stop()
+                // One row that works only with TLS 1.3, to show its note.
+                if let i = model.finder.trials.firstIndex(where: \.works) {
+                    model.finder.pretendTLS12FailedForSnapshot(at: i)
+                }
                 for mode in ["light", "dark"] {
                     NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
                     try? await Task.sleep(for: .seconds(0.8))

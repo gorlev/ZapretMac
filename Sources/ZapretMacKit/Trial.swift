@@ -104,25 +104,41 @@ public struct Trial: Identifiable, Equatable, Sendable {
         status = Self.combine(attempts)
     }
 
-    /// Records each TLS version's results. A site opens only if it opened with
-    /// every version; a failure names the version it failed with.
+    /// Records each TLS version's results. A site opens if it opened with
+    /// every version, or with TLS 1.3 alone (what browsers use; see
+    /// `worksOnlyWithTLS13`). Otherwise it fails, naming the version it failed with.
     public mutating func finish(versions results: [VersionResult]) {
         guard let first = results.first else { return finish(with: []) }
         let joined = first.sites.indices.map { i -> SiteAttempt in
             let site = first.sites[i].site
             var slowest = 0
+            var failure: (TLSVersion, String)?
+            var tls13: Int?
             for result in results where i < result.sites.count {
                 switch result.sites[i].result {
-                case .opens(let ms): slowest = max(slowest, ms)
+                case .opens(let ms):
+                    slowest = max(slowest, ms)
+                    if result.version == .tls13 { tls13 = ms }
                 case .fails(let reason):
-                    return SiteAttempt(site: site, result: .fails("\(result.version.name): \(reason)"))
+                    if failure == nil { failure = (result.version, reason) }
                 }
+            }
+            if let failure {
+                if let tls13 { return SiteAttempt(site: site, result: .opens(milliseconds: tls13)) }
+                return SiteAttempt(site: site, result: .fails("\(failure.0.name): \(failure.1)"))
             }
             return SiteAttempt(site: site, result: .opens(milliseconds: slowest))
         }
         sites = joined
         versions = results
         status = Self.combine(joined)
+    }
+
+    /// The try works, but only because TLS 1.3 worked: TLS 1.2 was tried and
+    /// failed. Browsers use TLS 1.3, so it is still usable; some older apps
+    /// use TLS 1.2 and may not get through.
+    public var worksOnlyWithTLS13: Bool {
+        works && works(with: .tls13) == true && works(with: .tls12) == false
     }
 
     /// Whether the try worked with a version; nil if that version was not tried.
@@ -152,15 +168,17 @@ public struct Trial: Identifiable, Equatable, Sendable {
         return attempts.isEmpty ? .waiting : .works(milliseconds: slowest)
     }
 
-    /// Working strategies first, fastest first; then still running; failures
-    /// last, those that opened more sites first. Equal ranks keep their order.
+    /// Working strategies first, fastest first (those that work with every
+    /// TLS version before those that work only with TLS 1.3); then still
+    /// running; failures last, those that opened more sites first. Equal
+    /// ranks keep their order.
     public static func ranked(_ trials: [Trial]) -> [Trial] {
         func key(_ t: Trial) -> (Int, Int) {
             switch t.status {
-            case .works(let ms): (0, ms)
-            case .testing: (1, 0)
-            case .waiting: (2, 0)
-            case .fails: (3, -t.openCount)
+            case .works(let ms): (t.worksOnlyWithTLS13 ? 1 : 0, ms)
+            case .testing: (2, 0)
+            case .waiting: (3, 0)
+            case .fails: (4, -t.openCount)
             }
         }
         return trials.enumerated()
