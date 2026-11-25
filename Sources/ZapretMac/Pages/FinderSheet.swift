@@ -22,13 +22,24 @@ struct FinderSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 VStack(alignment: .leading, spacing: Space.xs) {
-                    Picker("Scan", selection: $model.finderDepth) {
-                        Text("Quick").tag(ScanDepth.quick)
-                        Text("Thorough").tag(ScanDepth.thorough)
+                    HStack(spacing: Space.lg) {
+                        Picker("Scan", selection: $model.finderDepth) {
+                            Text("Quick").tag(ScanDepth.quick)
+                            Text("Thorough").tag(ScanDepth.thorough)
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .fixedSize()
+                        if model.finderDepth == .thorough {
+                            Picker("Repeat each try", selection: $model.finderRepeats) {
+                                Text("Once").tag(1)
+                                Text("3 times").tag(3)
+                            }
+                            .fixedSize()
+                            .help("A try works only if it opens the site every time. Three times catches filters that answer unreliably.")
+                        }
+                        Spacer(minLength: 0)
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .fixedSize()
                     .disabled(finder.isRunning)
                     Text(depthHelp)
                         .font(.caption)
@@ -89,6 +100,18 @@ struct FinderSheet: View {
                         }
                     }
                     .font(.callout)
+                }
+                if finder.isDiagnosing && finder.isRunning {
+                    HStack(spacing: Space.sm) {
+                        ProgressView().controlSize(.small)
+                        Text("Finding out what kind of block it is…")
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.callout)
+                } else {
+                    ForEach(verdicts, id: \.kind) { verdict in
+                        BlockVerdictLine(kind: verdict.kind, sites: finder.sites.count > 1 ? verdict.sites : [])
+                    }
                 }
             }
             .padding(Space.xl)
@@ -159,7 +182,15 @@ struct FinderSheet: View {
     private var depthHelp: String {
         switch model.finderDepth {
         case .quick: String(localized: "Tries the built-in strategies and yours.")
-        case .thorough: String(localized: "Tries every split and TLS-record combination zapret's blockcheck tests. Takes a few minutes.")
+        case .thorough: String(localized: "Tries every split and TLS-record combination zapret's blockcheck tests, with TLS 1.3 and TLS 1.2 separately. Takes a few minutes.")
+        }
+    }
+
+    /// One line per kind of block, worst first, with the sites that have it.
+    private var verdicts: [(kind: BlockKind, sites: [String])] {
+        BlockKind.allCases.compactMap { kind in
+            let sites = finder.diagnoses.filter { $0.kind == kind }.map(\.site)
+            return sites.isEmpty ? nil : (kind, sites)
         }
     }
 
@@ -211,19 +242,13 @@ private struct TrialRow<Action: View>: View {
                 }
             }
             Spacer(minLength: Space.sm)
-            switch trial.status {
-            case .waiting: EmptyView()
-            case .testing: Text("Testing…").foregroundStyle(.secondary)
-            case .works(let ms):
-                // The time and the button keep their size; the name truncates.
-                Text("\(ms) ms").foregroundStyle(.secondary).monospacedDigit().fixedSize()
-                action().fixedSize()
-            case .fails(let reason):
-                if trial.isPartial {
-                    Text("Opened \(trial.openCount) of \(trial.sites.count)").foregroundStyle(.secondary).monospacedDigit().fixedSize()
-                } else {
-                    Text(reason).foregroundStyle(.secondary).lineLimit(1)
-                }
+            if trial.versions.isEmpty {
+                trailing
+            } else {
+                // TLS columns line up from row to row: the result after them has one width.
+                TLSMarks(versions: trial.versions)
+                HStack(spacing: Space.sm) { trailing }
+                    .frame(width: 112, alignment: .trailing)
             }
         }
         .font(.callout)
@@ -231,9 +256,38 @@ private struct TrialRow<Action: View>: View {
         .help(siteDetails)
     }
 
+    @ViewBuilder private var trailing: some View {
+        switch trial.status {
+        case .waiting: EmptyView()
+        case .testing: Text("Testing…").foregroundStyle(.secondary)
+        case .works(let ms):
+            // The time and the button keep their size; the name truncates.
+            Text("\(ms) ms").foregroundStyle(.secondary).monospacedDigit().fixedSize()
+            action().fixedSize()
+        case .fails(let reason):
+            if trial.isPartial {
+                Text("Opened \(trial.openCount) of \(trial.sites.count)").foregroundStyle(.secondary).monospacedDigit().fixedSize()
+            } else {
+                Text(reason).foregroundStyle(.secondary).lineLimit(1)
+            }
+        }
+    }
+
     /// Every site's result, one per line, when there are several; the sites
     /// that did not open come first.
     private var siteDetails: String {
+        if !trial.versions.isEmpty {
+            // Every TLS version's result, with the site names when there are several.
+            return trial.versions.flatMap { result in
+                result.sites.map { attempt in
+                    let label = trial.sites.count > 1 ? "\(result.version.name) · \(attempt.site)" : result.version.name
+                    return switch attempt.result {
+                    case .opens(let ms): String(localized: "\(label): opens in \(ms) ms")
+                    case .fails(let reason): String(localized: "\(label): \(reason)")
+                    }
+                }
+            }.joined(separator: "\n")
+        }
         guard trial.sites.count > 1 else { return "" }
         let ordered = trial.failedSites + trial.sites.filter(\.opens)
         return ordered.map { attempt in
@@ -250,6 +304,64 @@ private struct TrialRow<Action: View>: View {
         case .testing: ProgressView().controlSize(.small)
         case .works: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
         case .fails: Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
+        }
+    }
+}
+
+/// "TLS 1.3 ✓  TLS 1.2 ✗": which TLS versions a scan try worked with.
+private struct TLSMarks: View {
+    let versions: [VersionResult]
+
+    var body: some View {
+        HStack(spacing: Space.sm) {
+            ForEach(versions, id: \.version) { result in
+                HStack(spacing: Space.xs) {
+                    Text(verbatim: result.version.name)
+                    Image(systemName: result.opens ? "checkmark" : "xmark")
+                        .foregroundStyle(result.opens ? .green : .red)
+                        .accessibilityLabel(result.opens ? Text("works") : Text("fails"))
+                }
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .fixedSize()
+    }
+}
+
+/// The diagnosis of a site (S-101): one line with an icon. With several
+/// sites, the ones it applies to are listed under it.
+struct BlockVerdictLine: View {
+    let kind: BlockKind
+    var sites: [String] = []
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
+            Image(systemName: kind.symbol)
+                .foregroundStyle(color)
+                .frame(width: 16)
+            VStack(alignment: .leading, spacing: Space.xs) {
+                Text(kind.message)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !sites.isEmpty {
+                    Text(verbatim: sites.joined(separator: ", "))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.callout)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var color: AnyShapeStyle {
+        switch kind {
+        case .dns: AnyShapeStyle(.orange)
+        case .ip: AnyShapeStyle(.red)
+        case .dpi: AnyShapeStyle(.tint)
+        case .none: AnyShapeStyle(.green)
         }
     }
 }

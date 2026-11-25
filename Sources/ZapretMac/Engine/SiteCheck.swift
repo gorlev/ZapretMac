@@ -46,17 +46,25 @@ enum SiteCheck {
     /// Through the proxy, a "proxy could not connect" answer is tried once more:
     /// tpws reports it when its own lookup or connection to the site was slow.
     /// Only the site check retries; for a strategy trial a failure is the answer.
-    nonisolated static func fetch(_ url: URL, socksPort: Int?, timeout: TimeInterval = 8, retry: Bool = false) async -> Outcome {
-        let first = await fetchOnce(url, socksPort: socksPort, timeout: timeout)
+    /// `tls` pins the TLS version (S-102); nil lets the system choose.
+    nonisolated static func fetch(_ url: URL, socksPort: Int?, timeout: TimeInterval = 8, retry: Bool = false,
+                                  tls: TLSVersion? = nil) async -> Outcome {
+        let first = await fetchOnce(url, socksPort: socksPort, timeout: timeout, tls: tls)
         guard retry, socksPort != nil, case .failed(let reason) = first, reason == proxyFailure else { return first }
         try? await Task.sleep(for: .milliseconds(300))
-        return await fetchOnce(url, socksPort: socksPort, timeout: timeout)
+        return await fetchOnce(url, socksPort: socksPort, timeout: timeout, tls: tls)
     }
 
     nonisolated private static var proxyFailure: String { String(localized: "Could not connect") }
 
-    nonisolated private static func fetchOnce(_ url: URL, socksPort: Int?, timeout: TimeInterval) async -> Outcome {
+    nonisolated private static func fetchOnce(_ url: URL, socksPort: Int?, timeout: TimeInterval, tls: TLSVersion?) async -> Outcome {
         let config = URLSessionConfiguration.ephemeral
+        if let tls {
+            // Like curl's --tlsv1.3, and --tlsv1.2 --tls-max 1.2.
+            let version: tls_protocol_version_t = tls == .tls13 ? .TLSv13 : .TLSv12
+            config.tlsMinimumSupportedProtocolVersion = version
+            config.tlsMaximumSupportedProtocolVersion = version
+        }
         config.timeoutIntervalForRequest = timeout
         config.timeoutIntervalForResource = timeout + 2
         config.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData

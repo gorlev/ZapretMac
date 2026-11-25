@@ -99,6 +99,8 @@ final class AppModel {
     var showFinder = false
     /// Quick tries the strategies; Thorough runs blockcheck's tpws matrix.
     var finderDepth: ScanDepth = .quick
+    /// How often a thorough scan runs each try: 1 or 3 (S-102).
+    var finderRepeats = 1
     /// The page reopens where it was left. Test and snapshot runs start on Overview.
     var sidebar: SidebarItem? = Store.isOverridden ? .overview
         : SidebarItem(rawValue: UserDefaults.standard.string(forKey: "sidebar.page") ?? "") ?? .overview {
@@ -109,6 +111,9 @@ final class AppModel {
     var addSitesRequest = 0
     var check: SiteCheck.Result?
     var isChecking = false
+    /// What kind of block the checked site has, when it did not open directly (S-101).
+    var checkDiagnosis: BlockKind?
+    var isDiagnosingCheck = false
     /// The last site check ran in Transparent mode: its one fetch already went through tpws.
     var checkTransparent = false
     /// The Add Subscription sheet, and which list a new subscription feeds.
@@ -503,13 +508,23 @@ final class AppModel {
         guard let url = SiteCheck.url(from: prefs.testURL) else { return }
         isChecking = true
         check = nil
+        checkDiagnosis = nil
         // In Transparent mode tpws is no SOCKS proxy: every fetch already goes through it.
         let port = engine.state == .running && !prefs.transparentMode ? prefs.port : nil
-        checkTransparent = engine.state == .running && prefs.transparentMode
+        let transparent = engine.state == .running && prefs.transparentMode
+        checkTransparent = transparent
+        let resolver = finder.resolver
         Task {
             let result = await SiteCheck.run(url, port: port)
             check = result
             isChecking = false
+            // In Transparent mode even the diagnosis would go through tpws.
+            guard !result.direct.isOK, !transparent, let host = url.host else { return }
+            isDiagnosingCheck = true
+            let kind = await BlockCheck.diagnose(host: host, opensDirectly: false, resolver: resolver)
+            // A newer check may have started meanwhile.
+            if check == result { checkDiagnosis = kind }
+            isDiagnosingCheck = false
         }
     }
 
@@ -543,7 +558,7 @@ final class AppModel {
             finder.start(urls: urls, strategies: list, depth: .quick)
         case .thorough:
             let list = ScanPlan.tries(for: first).map { (id: $0.id, name: $0.name, arguments: $0.arguments) }
-            finder.start(urls: urls, strategies: list, depth: .thorough, timeout: 6)
+            finder.start(urls: urls, strategies: list, depth: .thorough, timeout: 6, repeats: finderRepeats)
         }
     }
 

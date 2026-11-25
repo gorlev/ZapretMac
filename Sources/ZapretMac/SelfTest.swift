@@ -487,12 +487,59 @@ enum SelfTest {
                 }())
             }
 
+            // S-101 S-102
+            await checkBlockDiagnosisAndTLS(model: model)
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 
             print(failures == 0 ? "SELFTEST PASS \(count) checks" : "SELFTEST FAIL \(failures) of \(count) checks")
             finish(code: failures == 0 ? 0 : 1)
         }
+    }
+
+    /// S-101 S-102: the block diagnosis with real DNS over HTTPS (and a fake
+    /// system resolver for the DNS verdict), then TLS 1.3 and 1.2 per scan row.
+    private static func checkBlockDiagnosisAndTLS(model: AppModel) async {
+        // S-101 S-102
+        let doh = await BlockCheck.dohAll("example.com")
+        check("DNS over HTTPS answers for example.com", doh.contains { !($0 ?? []).isEmpty }, "\(doh)")
+        // As if example.com failed directly: the address test runs too.
+        let real = await BlockCheck.diagnose(host: "example.com", opensDirectly: false)
+        check("example.com is not a DNS or IP block", real == .dpi, "\(real)")
+        let fakeResolver: BlockCheck.Resolver = { _ in ["195.208.4.1"] }
+        let spoofed = await BlockCheck.diagnose(host: "example.com", opensDirectly: false, resolver: fakeResolver)
+        check("a system answer unlike DNS over HTTPS is a DNS block", spoofed == .dns, "\(spoofed)")
+
+        // The finder shows the DNS verdict before any try finishes, then a quick find still works.
+        guard let url = URL(string: "https://example.com") else { return }
+        model.finder.resolver = fakeResolver
+        model.startFinder(url: url, depth: .quick)
+        for _ in 0..<200 where model.finder.isDiagnosing { try? await Task.sleep(for: .milliseconds(50)) }
+        check("the finder shows the DNS verdict before trying strategies",
+              model.finder.diagnoses.map(\.kind) == [.dns] && model.finder.finishedCount == 0,
+              "\(model.finder.diagnoses), \(model.finder.finishedCount) done")
+        for _ in 0..<800 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
+        check("a quick find still works after the diagnosis", model.finder.isDone && model.finder.workingCount > 0,
+              "\(model.finder.trials.map(\.status))")
+        model.finder.resolver = BlockCheck.systemResolver
+
+        // A thorough scan, repeats 1: the first finished rows have both TLS versions.
+        model.finderRepeats = 1
+        model.startFinder(url: url, depth: .thorough)
+        check("a thorough https scan tries TLS 1.3 and 1.2", model.finder.versions == [.tls13, .tls12] && model.finder.repeats == 1)
+        for _ in 0..<900 where model.finder.finishedCount < 3 && model.finder.isRunning {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        let finished = model.finder.trials.filter { $0.status != .waiting && $0.status != .testing }
+        check("finished scan rows record both TLS versions", finished.count >= 3
+              && finished.allSatisfy { $0.versions.map(\.version) == [.tls13, .tls12] },
+              "\(finished.map { "\($0.name): \($0.versions.map { "\($0.version.name) \($0.opens)" })" })")
+        check("the diagnosis of a site that opens finds no block", model.finder.diagnoses.map(\.kind) == [.none],
+              "\(model.finder.diagnoses)")
+        model.finder.stop()
+        check("stopping a scan with TLS versions stops it", !model.finder.isRunning)
+        model.finderDepth = .quick
     }
 
     /// S-081 S-082 on a `FakeHelperClient`.
