@@ -34,9 +34,13 @@ public struct TPWSCommand: Equatable, Sendable {
         var out = ["--socks", "--bind-addr=127.0.0.1", "--port=\(port)"]
         if debug { out.append("--debug=1") }
         if let pidFile { out.append("--pidfile=\(pidFile)") }
-        if scope == .listOnly, let hostlistPath { out.append("--hostlist=\(hostlistPath)") }
-        if let excludePath { out.append("--hostlist-exclude=\(excludePath)") }
-        out.append(contentsOf: strategy)
+        // Lists belong to a desync profile: with several profiles (`--new`),
+        // every profile gets them, so My list and Never Touch apply to all.
+        var lists: [String] = []
+        if scope == .listOnly, let hostlistPath { lists.append("--hostlist=\(hostlistPath)") }
+        if let excludePath { lists.append("--hostlist-exclude=\(excludePath)") }
+        let profiles = StrategyProfiles.split(strategy).map { lists + $0 }
+        out.append(contentsOf: StrategyProfiles.join(profiles))
         return out
     }
 

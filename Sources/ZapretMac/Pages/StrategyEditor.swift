@@ -78,6 +78,12 @@ struct StrategyEditor: View {
                             .multilineTextAlignment(.trailing)
                             .lineLimit(1...3)
                     }
+                    if options.hasSecondProfile {
+                        Label("This strategy has a separate part for HTTP/HTTPS; it is kept in More tpws flags.", systemImage: "info.circle")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     ForEach(warnings.filter { $0 != .oobWithDisorder }, id: \.message) { MacWarningNote(warning: $0) }
                 } header: {
                     Text("Advanced")

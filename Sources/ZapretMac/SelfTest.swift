@@ -154,6 +154,39 @@ enum SelfTest {
             check("at least one strategy opens example.com", model.finder.workingCount > 0)
             check("the bypass keeps running while it tests", model.engine.state == .running && model.engine.commandLine == before)
 
+            // S-091 S-093
+            // One strategy for HTTP and another for HTTPS, joined with --new.
+            let joined = StrategyProfiles(http: StrategyOptions(arguments: ["--hostcase", "--split-pos=method+2"]),
+                                          https: StrategyOptions(arguments: ["--tlsrec=sniext+1", "--split-pos=midsld"])).arguments
+            let joinedRun = await Engine.dryRun(joined)
+            check("tpws accepts an HTTP + HTTPS strategy", joinedRun.ok, joinedRun.output)
+            // Saving a scan row: the editor opens with its flags; saving selects it.
+            if let row = ScanPlan.https.first(where: { $0.arguments.contains("--oob") && $0.arguments.contains { $0.hasPrefix("--tlsrec") } }) {
+                let trial = Trial(id: row.id, name: row.name, arguments: row.arguments, status: .works(milliseconds: 100))
+                model.saveScanRow(trial)
+                let scanDraft = model.finderDraft
+                check("saving a scan row opens the editor with its flags and name",
+                      scanDraft?.options.arguments == row.arguments && scanDraft?.name == row.name, "\(String(describing: scanDraft))")
+                model.finderDraft = nil
+                if let scanDraft {
+                    let found = model.save(scanDraft)
+                    check("a saved scan row is a custom strategy with exactly its flags, selected",
+                          model.prefs.strategyID == found.selectionID && model.activeStrategy.arguments == row.arguments,
+                          "\(model.activeStrategy.arguments)")
+                }
+            }
+            // Turning on with the joined strategy and the site list: both parts get the list.
+            model.prefs.scope = .listOnly
+            model.save(StrategyDraft(name: "HTTP + HTTPS", options: StrategyOptions(arguments: joined)))
+            check("a joined strategy round-trips through a saved strategy", model.activeStrategy.arguments == joined,
+                  "\(model.activeStrategy.arguments)")
+            try? await Task.sleep(for: .milliseconds(300))
+            for _ in 0..<30 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+            let line = model.engine.commandLine
+            check("tpws runs with an HTTP + HTTPS strategy and the site list", model.engine.state == .running, "\(model.engine.state)")
+            check("the command has two profiles, each with the hostlist",
+                  line.contains(" --new ") && line.components(separatedBy: "--hostlist=").count - 1 == 2, line)
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 

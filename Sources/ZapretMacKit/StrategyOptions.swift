@@ -68,10 +68,16 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
         return out
     }
 
-    /// Reads tpws flags. Unknown flags go to `extra`.
+    /// Reads tpws flags. Unknown flags go to `extra`. The form covers the
+    /// first desync profile only: from the first `--new` on, the flags stay
+    /// verbatim in `extra`, so a joined strategy round-trips unchanged.
     public init(arguments: [String]) {
         self.init()
-        for arg in arguments {
+        for (index, arg) in arguments.enumerated() {
+            if arg == StrategyProfiles.separator {
+                extra.append(contentsOf: arguments[index...])
+                break
+            }
             let parts = arg.split(separator: "=", maxSplits: 1).map(String.init)
             let name = parts[0]
             if parts.count == 2, let path = Self.values.first(where: { $0.0 == name })?.1 {
