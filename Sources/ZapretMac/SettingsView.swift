@@ -26,6 +26,7 @@ struct SettingsView: View {
             switch tab {
             case .general: GeneralSettings()
             case .appearance: AppearanceSettings()
+            case .advanced: AdvancedSettings()
             case .about: AboutSettings()
             }
         }
@@ -37,7 +38,7 @@ struct SettingsView: View {
 
 /// The Settings tabs. Snapshot mode walks through every case.
 enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, appearance, about
+    case general, appearance, advanced, about
 
     var id: String { rawValue }
 
@@ -45,6 +46,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: String(localized: "General")
         case .appearance: String(localized: "Appearance")
+        case .advanced: String(localized: "Advanced")
         case .about: String(localized: "About")
         }
     }
@@ -53,6 +55,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general: "gearshape"
         case .appearance: "paintpalette"
+        case .advanced: "gearshape.2"
         case .about: "info.circle"
         }
     }
@@ -135,6 +138,67 @@ struct GeneralSettings: View {
         guard let port = Int(portText), TPWSCommand.isValidPort(port), port != model.prefs.port else { return }
         model.prefs.port = port
         model.portChanged()
+    }
+}
+
+/// Transparent mode's helper (S-080): what it does, its state, and the
+/// buttons that install, approve, and remove it. The mode switch comes later.
+struct AdvancedSettings: View {
+    @State private var helper = HelperClient.shared
+    @State private var confirmRemove = false
+
+    var body: some View {
+        Section {
+            LabeledContent("Helper") {
+                Label(helper.stateTitle, systemImage: symbol)
+                    .foregroundStyle(helper.state == .ready ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+            }
+            HStack {
+                if !helper.isRegistered {
+                    Button("Install Helper…") { helper.register() }
+                }
+                Button("Open Login Items…") { helper.openSystemSettingsLoginItems() }
+                if helper.isRegistered {
+                    Button("Remove Helper") { confirmRemove = true }
+                }
+            }
+        } header: {
+            Text("Transparent mode")
+        } footer: {
+            VStack(alignment: .leading, spacing: Space.xs) {
+                Text("Sends every app's web traffic through tpws with no proxy setting. It needs a helper that runs as administrator.")
+                    .foregroundStyle(.secondary)
+                if helper.state == .needsApproval {
+                    Text("Turn on ZapretMac in System Settings, under General, Login Items & Extensions.")
+                        .foregroundStyle(.secondary)
+                }
+                if let message = helper.message {
+                    Text(message).foregroundStyle(.red)
+                }
+            }
+        }
+        .confirmationDialog("Remove the helper?", isPresented: $confirmRemove) {
+            Button("Remove Helper", role: .destructive) { Task { await helper.unregister() } }
+        } message: {
+            Text("Transparent mode stops working until you install it again.")
+        }
+        .task {
+            // Approval happens in System Settings, which never calls back: look again every 2 seconds.
+            while !Task.isCancelled {
+                helper.refresh()
+                if helper.state == .ready, helper.helperVersion == nil, !Store.isOverridden { await helper.checkVersion() }
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
+    }
+
+    private var symbol: String {
+        switch helper.state {
+        case .ready: "checkmark.circle.fill"
+        case .needsApproval: "exclamationmark.circle"
+        case .notInstalled: "circle.dashed"
+        case .notFound: "questionmark.circle"
+        }
     }
 }
 

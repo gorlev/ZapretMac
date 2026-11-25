@@ -26,7 +26,8 @@ fi
 
 swift build -c $config --package-path "$here" --scratch-path "$scratch" 2>&1 | grep -E "error|warning|Build complete" | grep -v "^\[" || true
 bin="$scratch/$config/$name"
-[[ -x "$bin" ]] || { echo "build failed"; exit 1; }
+helper="$scratch/$config/${name}Helper"
+[[ -x "$bin" && -x "$helper" ]] || { echo "build failed"; exit 1; }
 # swift build can report success while an edited file failed to compile. Catch that.
 stale=$(find "$here/Sources" -name '*.swift' -newer "$bin" | head -1)
 if [[ -n "$stale" ]]; then
@@ -50,8 +51,12 @@ app="$HOME/Applications/$name.app"
 [[ -n "$slot" ]] && app="$HOME/Library/Developer/$name/slot-$slot/$name.app"
 mkdir -p "${app:h}"
 rm -rf "$app"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Helpers" "$app/Contents/Library/LaunchDaemons"
 cp "$bin" "$app/Contents/MacOS/$name"
+# The root helper for Transparent mode (S-080). SMAppService registers it from
+# this LaunchDaemon plist once the person approves it in Login Items.
+cp "$helper" "$app/Contents/MacOS/${name}Helper"
+cp "$here/LaunchDaemon.plist" "$app/Contents/Library/LaunchDaemons/com.gorlev.zapretmac.helper.plist"
 cp "$tpws_dir/tpws" "$app/Contents/Helpers/tpws"
 commit=$(cat "$here/Vendor/zapret/COMMIT" 2>/dev/null || echo unknown)
 sed -e "s/__BUILD__/$(date +%Y%m%d%H%M)/" -e "s/__ZAPRET_COMMIT__/$commit/" "$here/Info.plist.in" > "$app/Contents/Info.plist"
@@ -67,6 +72,7 @@ fi
 python3 "$here/tools/l10n.py" build "$app/Contents/Resources" || { echo "localization check failed"; exit 1; }
 xattr -cr "$app"
 codesign --force --options runtime --sign "$identity" "$app/Contents/Helpers/tpws" 2>&1 | grep -v "replacing existing signature" || true
+codesign --force --options runtime --identifier com.gorlev.zapretmac.helper --sign "$identity" "$app/Contents/MacOS/${name}Helper" 2>&1 | grep -v "replacing existing signature" || true
 codesign --force --sign "$identity" "$app" 2>&1 | grep -v "replacing existing signature" || true
 echo "installed $app (signed: ${identity})"
 
