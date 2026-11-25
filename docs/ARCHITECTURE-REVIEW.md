@@ -9,3 +9,11 @@ Signals: end of milestone only. Largest file OverviewPage.swift (469 lines), lar
 3. **Split OverviewPage.swift** (Weak). Move StatsRow, SetupCard, CheckCard, and FlowLayout into their own files when it passes 600 lines.
 
 None is Strong, so nothing was changed. Pick one to do it in its own commit.
+
+# Check-in, end of M6 (2026-11-25)
+
+Signals: end of milestone; five stories changed the finder in parallel; FinderSheet.swift and Models.swift took most merge conflicts; three of four new fix-log entries are about running tpws processes (leftover process, unbounded exit wait, readiness).
+
+1. **A seam for running tpws** (now Strong). Engine, StrategyFinder, the dry run, and the self-test's stray-process check each start `Process` with the bundled binary, each with its own stop/kill/wait rules. One `TPWSRunner` (start → handle with port, pid file, output stream; stop with a bounded wait) would own those rules once. Not done unattended because it touches the running bypass; do it as the first step of M8, which adds a root helper that also runs tpws.
+2. **Split AppModel** (Medium, unchanged): the finder state (finderDraft, rememberScan, joined scans) now adds to it; a `FinderModel` beside `StrategyFinder` would take it out.
+3. **Split FinderSheet.swift** (Medium): input, results list, row, and footer into separate views; it is the file every finder story edits.
