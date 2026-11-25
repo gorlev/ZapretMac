@@ -59,7 +59,8 @@ final class ThemeStore {
     /// only while the Mac's accent is Multicolor (System Settings >
     /// Appearance). Any other Mac accent wins. Example:
     /// Theme(id: "brand", name: "Brand", shades: .init(light: 0x8EEBC4, base: 0x2BC48A, deep: 0x0F7A55), darkText: true)
-    static let brand: Theme? = Theme(id: "brand", name: "Teal", shades: .init(light: 0x5FD8EC, base: 0x0891B2, deep: 0x0E7490), darkText: true)
+    /// Petrol, the top of the icon's petrol-to-navy gradient; dark enough for white text.
+    static let brand: Theme? = Theme(id: "brand", name: "Petrol", shades: .init(light: 0x5CC8DA, base: 0x0B7285, deep: 0x095868))
 
     var themeID: String {
         didSet { if !Store.isOverridden { UserDefaults.standard.set(themeID, forKey: "appearance.accent") } }
