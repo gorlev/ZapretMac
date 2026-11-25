@@ -6,6 +6,7 @@
 # Usage: ./build.sh            release build, install (no debug symbols or local paths)
 #        ./build.sh --debug    debug build, install
 #        ./build.sh --open     install, then quit the running copy and open the new one
+#        ./build.sh --universal  Apple silicon and Intel in one app (for downloads)
 set -euo pipefail
 here=${0:A:h}
 name="ZapretMac"
@@ -15,6 +16,9 @@ slot="${ZM_SLOT:-}"
 scratch="$HOME/Library/Developer/$name/build${slot:+-$slot}"
 config=release
 [[ " $* " == *" --debug "* ]] && config=debug
+universal=""
+[[ " $* " == *" --universal "* ]] && universal=1
+[[ -n "$universal" ]] && scratch="$scratch-universal"
 
 # Sign with your Apple Development certificate when you have one (Xcode >
 # Settings > Accounts). Otherwise sign ad hoc, which is fine for your own Mac.
@@ -24,9 +28,17 @@ if [[ -z "$identity" ]]; then
 fi
 [[ -n "$identity" ]] || identity=-
 
-swift build -c $config --package-path "$here" --scratch-path "$scratch" 2>&1 | grep -E "error|warning|Build complete" | grep -v "^\[" || true
-bin="$scratch/$config/$name"
-helper="$scratch/$config/${name}Helper"
+if [[ -n "$universal" ]]; then
+  # The x86_64 note is Apple's reminder that Intel support is ending; the build is fine.
+  swift build -c $config --arch arm64 --arch x86_64 --package-path "$here" --scratch-path "$scratch" 2>&1 \
+    | grep -E "error|warning|Build complete" | grep -v "^\[" | grep -v "x86_64 architecture is deprecated" || true
+  products="$scratch/out/Products/${(C)config}"
+else
+  swift build -c $config --package-path "$here" --scratch-path "$scratch" 2>&1 | grep -E "error|warning|Build complete" | grep -v "^\[" || true
+  products="$scratch/$config"
+fi
+bin="$products/$name"
+helper="$products/${name}Helper"
 [[ -x "$bin" && -x "$helper" ]] || { echo "build failed"; exit 1; }
 # swift build can report success while an edited file failed to compile. Catch that.
 stale=$(find "$here/Sources" -name '*.swift' -newer "$bin" | head -1)

@@ -7,7 +7,7 @@
 **A native macOS app for [zapret](https://github.com/bol-van/zapret)'s DPI bypass.**
 One switch, ready-made strategies, site lists, and a strategy finder, in a SwiftUI app that feels at home on your Mac.
 
-[![macOS 26+](https://img.shields.io/badge/macOS-26%2B-000000?logo=apple&logoColor=white)](#requirements)
+[![macOS 26+](https://img.shields.io/badge/macOS-26%2B-000000?logo=apple&logoColor=white)](#install)
 [![Swift 6.2](https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0B7285)](LICENSE)
 [![Languages](https://img.shields.io/badge/languages-8-0B7285)](#languages)
@@ -26,8 +26,7 @@ One switch, ready-made strategies, site lists, and a strategy finder, in a Swift
 - [What it does](#what-it-does)
 - [Features](#features)
 - [Screenshots](#screenshots)
-- [Requirements](#requirements)
-- [Build and install](#build-and-install)
+- [Install](#install)
 - [Getting started](#getting-started)
 - [How it works](#how-it-works)
 - [Privacy and safety](#privacy-and-safety)
@@ -50,7 +49,7 @@ On macOS, using zapret usually means a terminal, config files, and command-line 
 - **Three ways to route traffic:**
   - **SOCKS5 proxy** on `127.0.0.1`, without administrator rights. Point a browser at it.
   - **System proxy:** every app that follows the macOS proxy setting goes through it. With *My list*, a local PAC file sends only the listed sites through `tpws`. The previous proxy setting comes back when ZapretMac stops, quits, or crashes.
-  - **Transparent mode:** every app's web traffic goes through `tpws` with no proxy settings at all, over IPv4 and IPv6. It uses a small privileged helper and macOS's own packet filter (see [How it works](#how-it-works)).
+  - **Transparent mode:** every app's web traffic goes through `tpws` with no proxy settings at all, over IPv4 and IPv6. It uses a small privileged helper and macOS's own packet filter (see [How it works](#how-it-works)). Available when you [build ZapretMac yourself](#option-2-build-from-source-all-features).
 - **Share with your network:** phones and other devices on the same Wi-Fi can use the bypass through a SOCKS5 address, with a QR code to scan.
 
 **Choose a strategy**
@@ -101,13 +100,36 @@ On macOS, using zapret usually means a terminal, config files, and command-line 
   </tr>
 </table>
 
-## Requirements
+## Install
 
-- **macOS 26** (Tahoe) or later, on Apple silicon or Intel.
-- To build: **Xcode 26** or later (the command-line tools, plus Icon Composer's tools, which come with Xcode).
-- For **Transparent mode**: a build signed with an Apple Development certificate. The helper only accepts connections from an app signed by the same team, and an ad hoc signature has no team.
+There are two ways to get ZapretMac. Both need **macOS 26** (Tahoe) or later, on Apple silicon or Intel.
 
-## Build and install
+| | Download the app | Build from source |
+|---|---|---|
+| Effort | Download, unzip, open | One command, with Xcode installed |
+| SOCKS5 proxy, system proxy, PAC | ✓ | ✓ |
+| Strategies, Find a Strategy, site lists, subscriptions | ✓ | ✓ |
+| Sharing with your network, menu bar, global shortcut | ✓ | ✓ |
+| **Transparent mode** | — | ✓ |
+| First launch | Needs one approval in System Settings | Opens normally |
+
+**Why the difference?** The downloadable app is signed *ad hoc*, without an Apple developer certificate. macOS asks you to approve it once, and Transparent mode's privileged helper refuses to work with it: for safety, the helper only talks to an app signed by the same developer team. When you build ZapretMac yourself, it is signed with your own certificate, so everything works.
+
+### Option 1: Download the app
+
+1. Download `ZapretMac.zip` from the [latest release](https://github.com/gorlev/ZapretMac/releases/latest) and unzip it.
+2. Move `ZapretMac.app` to your Applications folder.
+3. Open it. macOS says it cannot verify the developer: click **Done**, open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to ZapretMac.
+
+   Or run this once in Terminal instead:
+
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/ZapretMac.app
+   ```
+
+### Option 2: Build from source (all features)
+
+You need **Xcode 26** or later, and an **Apple Development certificate** for Transparent mode. The certificate is free: in Xcode, open **Settings → Accounts**, add your Apple ID, then **Manage Certificates → + → Apple Development**.
 
 There is no Xcode project; ZapretMac is a Swift package with one build script.
 
@@ -122,12 +144,10 @@ cd ZapretMac
 1. builds `tpws` from `Vendor/zapret/tpws` as a universal binary (`make mac`),
 2. builds the app and the Transparent-mode helper,
 3. compiles the icon and the translations,
-4. signs everything with your Apple Development certificate if you have one (ad hoc otherwise),
+4. signs everything with your Apple Development certificate (ad hoc if you have none),
 5. and installs `~/Applications/ZapretMac.app`.
 
-`--open` restarts the app with the new build. Build products stay in `~/Library/Developer/ZapretMac`, outside the repository.
-
-Release builds carry no debug symbols or local folder paths. To build a copy to share without your own certificate, sign it ad hoc with `SIGN_IDENTITY=- ./build.sh`. Everything works in an ad hoc build except Transparent mode, which needs a team-signed build.
+`--open` restarts the app with the new build. Build products stay in `~/Library/Developer/ZapretMac`, outside the repository. Release builds carry no debug symbols or local folder paths; `SIGN_IDENTITY=- ./build.sh` builds an ad hoc copy like the downloadable one.
 
 ## Getting started
 
