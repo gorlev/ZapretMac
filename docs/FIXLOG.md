@@ -23,3 +23,9 @@ Symptom: after ZapretMac was killed, the next start failed with "bind: Address a
 Cause: tpws is a child process and keeps running when the app is killed.
 Fix: tpws writes a pid file; before starting, the engine stops a leftover process that is our tpws binary.
 Rule: every helper process the app starts can be found and stopped by the next launch.
+
+## Transparent mode would have turned itself off at once (caught before shipping)
+Symptom: in review, the one-shot XPC call that started tpws closed its connection right after the reply.
+Cause: the helper treats a dropped connection as the app being gone and cleans up (S-082), so it would undo the start immediately.
+Fix: the connection that starts tpws stays open until stop; on a restart the old one closes only after the new start succeeded.
+Rule: when a peer cleans up on disconnect, the connection's lifetime is the feature's lifetime.

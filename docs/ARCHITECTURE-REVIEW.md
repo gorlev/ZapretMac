@@ -23,3 +23,9 @@ Signals: end of milestone; five stories changed the finder in parallel; FinderSh
 Three stories merged with only test and snapshot conflicts. One real cross-story bug surfaced at merge: the PAC file read only My list, not subscriptions; fixed by giving both tpws and PAC one source, `mergedDomains(excluded:)`.
 - Unchanged recommendation: the tpws runner seam (Strong) before M8.
 - New (Medium): SelfTest.swift and Snapshot.swift take a conflict on every parallel wave; one file per story's checks (`SelfTest+S070.swift`, …) registered in a list would remove that.
+
+# Check-in, end of M8 (2026-11-25)
+
+The tpws runner seam landed first and made Transparent mode a runner swap (`LocalTPWSRunner` / `HelperTPWSRunner`) with no change to Engine's logic. A unit test cross-checks that every argument list the app can build passes the helper's validator.
+- Medium: Engine.start/stop block the main thread while the helper answers (up to 12 s / 5 s). Make `TPWSRunner.start`/`TPWSHandle.stop` async before adding anything else that waits on XPC.
+- Medium (unchanged): one SelfTest file per story to stop the merge conflicts.

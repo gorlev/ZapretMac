@@ -11,7 +11,11 @@ On macOS zapret runs `tpws`, a proxy that splits and rewrites the first packets 
 - **Sites**: bypass all sites or only your list; a "Never touch" list for banks or sites a strategy breaks. Paste many at once or import a text file.
 - **Check a site**: opens an address directly and through tpws, and tells you whether the strategy helps.
 - **Log**: tpws output, live, filtered by sites or errors, with the exact command to copy.
-- **System proxy**: on with one admin prompt, restored on stop, quit, or after a crash.
+- **System proxy**: on with one admin prompt, restored on stop, quit, or after a crash. With "My list", a PAC file sends only listed sites through tpws.
+- **Transparent mode**: every app's web traffic goes through tpws with no proxy settings. A small helper (installed from Settings > Advanced, approved in Login Items) runs tpws as root and loads pf rules into the `com.apple/zapretmac` anchor; `/etc/pf.conf` is never edited, and the rules are removed when the app stops, quits, or crashes.
+- **Find a Strategy**: tries the built-in strategies, or blockcheck's whole tpws list, on one or more blocked sites; save what works.
+- **Site-list subscriptions**: zapret-style hostlists (gzip too) by URL, refreshed daily.
+- **Global shortcut** to turn the bypass on or off from any app.
 - Open at login, start on launch, light and dark mode.
 - In English, Türkçe, Deutsch, Español, Italiano, Français, Português (Brasil), and Русский, following the Mac's language (or a per-app language in System Settings).
 
@@ -35,9 +39,8 @@ tools/snap.sh
 
 ## Not yet
 
-- Transparent pf redirection (needs a privileged helper)
+- IPv6 in Transparent mode
 - UDP and QUIC bypass (`nfqws` does not run on macOS)
-- Automatic strategy search like `blockcheck.sh`
 
 ## License
 

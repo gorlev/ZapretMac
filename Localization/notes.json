@@ -10,7 +10,8 @@
     "tpws",
     "--tamper-cutoff=n2",
     "1024",
-    "hoSt"
+    "hoSt",
+    "Test runs do not install the helper."
   ],
   "_plural": {
     "%lld HTTP tricks": {
@@ -126,6 +127,11 @@
     "Shortcut": "Settings section title for the global shortcut.",
     "Type Shortcut": "Shown inside the shortcut recorder while it waits for keys. Very short.",
     "Record Shortcut": "Shown inside the shortcut recorder when no shortcut is set. Very short.",
-    "Only the sites in your list go through ZapretMac; others connect directly.": "Caption of the System proxy row when only listed sites use the proxy (PAC mode)."
+    "Only the sites in your list go through ZapretMac; others connect directly.": "Caption of the System proxy row when only listed sites use the proxy (PAC mode).",
+    "Transparent mode": "Name of the mode where every app's web traffic goes through tpws with no proxy settings (pf redirection by a root helper). Section title and row label; pick one natural name and use it in every string that mentions it.",
+    "Helper": "Row label: the small background program that runs as administrator for Transparent mode. Value is its state (Ready / Not installed / Needs approval in Login Items).",
+    "Ready": "State of the helper: installed and answering.",
+    "Remove the helper?": "Title of a confirmation alert before removing the helper.",
+    "Turn on ZapretMac in System Settings, under General, Login Items & Extensions.": "Use the names your macOS gives these panes (System Settings > General > Login Items & Extensions)."
   }
 }
