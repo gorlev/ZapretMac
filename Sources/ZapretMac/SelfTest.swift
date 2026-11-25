@@ -154,6 +154,25 @@ enum SelfTest {
             check("at least one strategy opens example.com", model.finder.workingCount > 0)
             check("the bypass keeps running while it tests", model.engine.state == .running && model.engine.commandLine == before)
 
+            // S-092
+            // A quick find on two sites tries every strategy on both, a few at a time.
+            let beforeMulti = model.engine.commandLine
+            let multi = SiteCheck.urls(from: "https://example.com https://www.wikipedia.org")
+            check("two sites typed with a space are read as two", multi.map { $0.host ?? "" } == ["example.com", "www.wikipedia.org"],
+                  "\(multi)")
+            model.startFinder(urls: multi, depth: .quick)
+            for _ in 0..<1200 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
+            let rows = model.finder.trials
+            check("a find on two sites finishes", model.finder.isDone, "\(rows.map(\.status))")
+            check("every row has a result for both sites",
+                  !rows.isEmpty && rows.allSatisfy { $0.sites.map(\.site) == ["example.com", "www.wikipedia.org"] },
+                  "\(rows.map { $0.sites.map(\.site) })")
+            check("the direct check covers both sites", model.finder.direct.map(\.site) == ["example.com", "www.wikipedia.org"])
+            check("at least one strategy opens both sites", rows.contains { $0.works && $0.openCount == 2 },
+                  "\(rows.map { "\($0.name): \($0.status)" })")
+            check("the bypass keeps running through a find on two sites",
+                  model.engine.state == .running && model.engine.commandLine == beforeMulti)
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 

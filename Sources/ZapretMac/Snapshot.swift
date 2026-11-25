@@ -52,13 +52,11 @@ enum Snapshot {
                     model.draft = nil
                     try? await Task.sleep(for: .seconds(0.6))
                 }
-                // Find a Strategy with real results for example.com.
-                if let url = URL(string: "https://example.com") {
-                    model.prefs.testURL = "https://example.com"
-                    model.openFinder()
-                    model.startFinder(url: url)
-                    for _ in 0..<300 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
-                }
+                // Find a Strategy with real results for two sites.
+                model.prefs.finderSites = "example.com wikipedia.org"
+                model.openFinder()
+                model.startFinder(urls: SiteCheck.urls(from: model.prefs.finderSites))
+                for _ in 0..<600 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
                 for mode in ["light", "dark"] {
                     NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
                     try? await Task.sleep(for: .seconds(0.8))
@@ -66,6 +64,7 @@ enum Snapshot {
                 }
                 // The same sheet after a thorough scan (blockcheck's matrix).
                 if let url = URL(string: "https://example.com") {
+                    model.prefs.finderSites = "https://example.com"
                     model.startFinder(url: url, depth: .thorough)
                     for _ in 0..<900 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
                 }

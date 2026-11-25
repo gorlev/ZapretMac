@@ -29,6 +29,7 @@ enum SeedData {
                 if let url = URL(string: site) { _ = await SiteCheck.fetch(url, socksPort: model.prefs.port) }
             }
             model.prefs.testURL = "https://example.com"
+            model.prefs.finderSites = "https://example.com"
             model.runCheck()
         }
     }

@@ -18,6 +18,8 @@ final class Prefs {
     var startOnLaunch: Bool { didSet { defaults.set(startOnLaunch, forKey: "startOnLaunch") } }
     var verboseLog: Bool { didSet { defaults.set(verboseLog, forKey: "verboseLog") } }
     var testURL: String { didSet { defaults.set(testURL, forKey: "testURL") } }
+    /// The sites Find a Strategy tries, one per line or separated by spaces or commas.
+    var finderSites: String { didSet { defaults.set(finderSites, forKey: "finderSites") } }
 
     static let defaultPort = 1088
 
@@ -40,6 +42,8 @@ final class Prefs {
         useSystemProxy = (d.object(forKey: "systemProxy") as? Bool) ?? !Store.isOverridden
         startOnLaunch = d.bool(forKey: "startOnLaunch")
         verboseLog = (d.object(forKey: "verboseLog") as? Bool) ?? true
-        testURL = d.string(forKey: "testURL") ?? "https://discord.com"
+        let testURL = d.string(forKey: "testURL") ?? "https://discord.com"
+        self.testURL = testURL
+        finderSites = d.string(forKey: "finderSites") ?? testURL
     }
 }

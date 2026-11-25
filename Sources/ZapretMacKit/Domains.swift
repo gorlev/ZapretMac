@@ -24,13 +24,19 @@ public enum Domains {
     public static func parseList(_ text: String) -> [String] {
         var seen = Set<String>()
         var out: [String] = []
-        for line in text.split(whereSeparator: \.isNewline) {
-            let body = line.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
-            for piece in body.split(whereSeparator: { $0.isWhitespace || $0 == "," || $0 == ";" }) {
-                if let d = normalize(String(piece)), seen.insert(d).inserted { out.append(d) }
-            }
+        for piece in pieces(text) {
+            if let d = normalize(piece), seen.insert(d).inserted { out.append(d) }
         }
         return out
+    }
+
+    /// The raw pieces of pasted text: split on lines, whitespace, commas, and
+    /// semicolons, with "# comments" dropped. Nothing is normalized.
+    public static func pieces(_ text: String) -> [String] {
+        text.split(whereSeparator: \.isNewline).flatMap { line in
+            let body = line.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
+            return body.split(whereSeparator: { $0.isWhitespace || $0 == "," || $0 == ";" }).map(String.init)
+        }
     }
 
     /// The hostlist file tpws reads: one domain per line.
