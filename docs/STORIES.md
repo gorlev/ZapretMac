@@ -218,6 +218,81 @@ Acceptance:
 - [manual] Killing ZapretMac while on leaves no ZapretMac pf rules after the next launch.
 Status: done
 
+## M9 What zapret still has for the Mac
+
+The rest of zapret that runs on macOS, compared feature by feature with tpws's options (`Vendor/zapret/tpws/tpws.c`), blockcheck.sh, `ipset/`, and docs/bsd.en.md. Stories that depend on nothing come first.
+
+### S-100 Let tpws build the site list by itself
+As the user, I turn on "Add blocked sites automatically" under Sites; tpws notices sites whose connections the filter breaks (several failures in a short time) and adds them to an "Added automatically" list that the bypass then uses, so I do not have to know which sites are blocked.
+Notes: tpws `--hostlist-auto=<file>`, `--hostlist-auto-fail-threshold` (default 3), `--hostlist-auto-fail-time` (default 60 s), `--hostlist-auto-debug=<log>`; zapret calls this MODE_FILTER=autohostlist. The app shows the file's sites as their own section, where I can move one to My list or Never Touch, delete it, or clear the list. Transparent mode: the helper refuses `--hostlist-auto` today because tpws would write the file as root; the helper owns the file (root-written under its own folder) and hands its contents to the app over XPC, or the mode is off there with a clear note — decide in the UX pass.
+Acceptance:
+- [unit] With the option on, the tpws arguments carry `--hostlist-auto=` with the threshold and time in every profile; off, they do not.
+- [self] A local test server that resets connections for one host gets that host into the automatic list after the threshold, and the app shows it.
+- [snap] The Sites page shows the automatic section with its count and the actions.
+Status: todo
+
+### S-101 Find out what kind of block it is
+As the user, when a site does not open, Find a Strategy (and the site check) first tells me whether the block is something ZapretMac can get around: the provider changes DNS answers, the site's IP address is blocked, or the filter reads the site name (DPI). For DNS blocking it suggests turning on encrypted DNS; for an IP block it says no strategy will help.
+Notes: blockcheck `check_dns`/`check_dns_spoof` (compares the system resolver with DNS-over-HTTPS answers from several public resolvers) and `check_dpi_ip_block` (connects to the blocked site's IP with an unblocked name, and to an unblocked site's IP with the blocked name). Use URLSession for DoH (`application/dns-message`, RFC 8484) or JSON DoH; never send the user's site list anywhere else.
+Acceptance:
+- [unit] The verdict logic maps (DNS differs, IP blocked, TLS reset with name) to the right message.
+- [self] With a fake resolver result that differs from DoH, the finder shows the DNS verdict before trying strategies.
+- [snap] The finder sheet shows a short verdict line with an icon above the results.
+Status: todo
+
+### S-102 Try TLS 1.2 and 1.3, and retry flaky results
+As the user, Thorough scans try each strategy with TLS 1.2 and TLS 1.3 separately and can repeat each try, like blockcheck, so a DPI that treats the versions differently or answers unreliably does not give me a wrong winner.
+Notes: blockcheck runs curl with `--tlsv1.2 --tls-max 1.2` and `--tlsv1.3`, and `REPEATS` attempts per try. URLSession: `tlsMinimumSupportedProtocolVersion`/`tlsMaximumSupportedProtocolVersion` on the session configuration. Default repeats 1; Thorough offers 3.
+Acceptance:
+- [unit] A try is "works" only if every repeat works; the result records the TLS version.
+- [self] A scan of example.com reports both versions per row.
+Status: todo
+
+### S-103 Filter by IP address ranges
+As the user, I can add IP addresses and ranges (one per line, CIDR, v4 and v6), or subscribe to an IP list, for apps that connect by address instead of by name; the bypass acts on those addresses (and never on an excluded range).
+Notes: tpws `--ipset=<file>`, `--ipset-exclude=<file>`, `--ipset-ip=`, gzip supported; zapret's `ipset/get_antifilter_*.sh`, `get_refilter_ipsum.sh`, `get_ipban.sh` produce such lists. Reuse the subscription machinery from S-070 with a "domains / IP addresses" kind. The helper's validator must accept the ipset file paths under the data folder (it already allows `--ipset=` there).
+Acceptance:
+- [unit] IP lines are parsed and normalized (CIDR, v4, v6, comments); bad lines are skipped.
+- [self] An IP list reaches tpws as `--ipset=` in every profile and passes the helper's validator.
+- [snap] Sites shows an "IP addresses" section.
+Depends: S-070
+Status: todo
+
+### S-104 Share the bypass with my other devices
+As the user, I turn on "Share with devices on this network" and my phone or TV can use the Mac as a SOCKS5 proxy at the address the app shows (with a QR code); it is off by default and only listens on the local network interface.
+Notes: tpws `--bind-iface4=<en0>` (plus 127.0.0.1) or `--bind-addr=<LAN address>`; macOS asks the user to allow incoming connections. Show the LAN address and port, and warn that anyone on the network can use it while it is on. Transparent passthrough for Internet Sharing (rdr on the shared interface, docs/bsd.en.md) is a later step.
+Acceptance:
+- [unit] With sharing on, the arguments add a LAN bind; off, only 127.0.0.1.
+- [manual] An iPhone on the same Wi-Fi opens a blocked site through the shown proxy address.
+- [snap] Settings shows the toggle, address, QR code, and the warning.
+Status: todo
+
+### S-105 Transparent mode for IPv6 too
+As the user on an IPv6 network, Transparent mode also sends IPv6 web traffic through tpws, so no connection skips the bypass.
+Notes: zapret's rules `rdr pass on lo0 inet6 proto tcp from !::1 to any port {80,443} -> fe80::1 port <P>` and `pass out route-to (lo0 fe80::1) inet6 … user { >root }`; tpws `--bind-iface6=lo0 --bind-linklocal=force`. Add to PFRules and the helper's fixed arguments; keep the validator strict.
+Acceptance:
+- [unit] PFRules produces both IPv4 and IPv6 lines; the helper's fixed arguments include the link-local bind.
+- [manual] On an IPv6 network, `curl -6` to a blocked site opens with Transparent mode on.
+Depends: S-081
+Status: todo
+
+### S-106 One-click suggested site lists
+As the user, Add Subscription offers a short list of known community lists (for example zapret's antizapret and refilter sources) with one line on what each contains, so I do not have to find addresses myself.
+Notes: URLs from zapret's `ipset/get_antizapret_domains.sh` and `get_refilter_domains.sh`; keep the list in one Kit file with names and descriptions; link to the source page. Country-specific lists say which country they are for.
+Acceptance:
+- [unit] Every suggested entry has a name, description, URL, and kind (domains / IPs).
+- [snap] The Add Subscription sheet shows the suggestions; choosing one fills the address.
+Depends: S-070
+Status: todo
+
+### S-107 The editor covers the remaining tpws options
+As the user, the strategy editor has controls for the tpws desync options it still lacks: the OOB byte value (`--oob-data`), disorder or OOB only for TLS or only for HTTP (`--disorder=tls`, `--oob=http`), protocol filter (`--filter-l7=http,tls`), and where tampering starts and stops (`--tamper-start`, `--tamper-cutoff`).
+Acceptance:
+- [unit] StrategyOptions round-trips each option; existing strategies are unchanged.
+- [self] tpws accepts a strategy using all of them (dry run), and the helper's validator accepts them.
+- [snap] The editor shows them in its Advanced section.
+Status: todo
+
 ## Dropped
 - Accounts, sync, telemetry: a local tool for one person.
 - nfqws / UDP / QUIC: zapret does not support it on macOS.
