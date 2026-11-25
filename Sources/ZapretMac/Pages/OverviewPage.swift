@@ -398,6 +398,17 @@ private struct CheckCard: View {
                     }
                 }
                 .padding(.top, Space.xs)
+                // Why the site does not open directly (S-101).
+                if model.isDiagnosingCheck {
+                    HStack(spacing: Space.sm) {
+                        ProgressView().controlSize(.small)
+                        Text("Finding out what kind of block it is…").foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .font(.callout)
+                } else if let kind = model.checkDiagnosis {
+                    BlockVerdictLine(kind: kind)
+                }
                 HStack(alignment: .firstTextBaseline) {
                     Text(verdict(result))
                         .font(.callout)

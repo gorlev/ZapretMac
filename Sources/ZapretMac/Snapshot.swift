@@ -110,6 +110,30 @@ enum Snapshot {
                     capture(to: "\(dir)/overview-off-\(mode).png")
                 }
             }
+            // S-101 S-102: Find a Strategy with a verdict line (a fake system
+            // resolver gives the DNS verdict) and a thorough scan's TLS columns,
+            // stopped after a few rows. Runs alone with APP_SNAPSHOT_PAGES=verdict.
+            if only == nil || only?.contains("verdict") == true, let url = URL(string: "https://example.com") {
+                let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
+                model.prefs.finderSites = "https://example.com"
+                model.finder.resolver = { _ in ["195.208.4.1"] }
+                model.openFinder()
+                model.finderDepth = .thorough
+                model.startFinder(url: url, depth: .thorough)
+                for _ in 0..<900 where model.finder.finishedCount < 6 && model.finder.isRunning {
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+                model.finder.stop()
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    try? await Task.sleep(for: .seconds(0.8))
+                    capture(to: "\(dir)/finder-verdict-\(mode).png", window: main?.attachedSheet)
+                }
+                model.finder.resolver = BlockCheck.systemResolver
+                model.finderDepth = .quick
+                model.showFinder = false
+                try? await Task.sleep(for: .seconds(0.6))
+            }
             // S-072: the System proxy caption in PAC mode (My list). Only the
             // preference is shown on; nothing applies the system proxy here.
             if only == nil || only?.contains("overview") == true {
