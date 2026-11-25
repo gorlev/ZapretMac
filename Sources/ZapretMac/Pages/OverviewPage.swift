@@ -157,8 +157,7 @@ struct PowerButton: View {
 
     private var fill: AnyShapeStyle {
         if isOn {
-            AnyShapeStyle(LinearGradient(colors: [Palette.accent.opacity(0.85), Palette.accent],
-                                         startPoint: .top, endPoint: .bottom))
+            AnyShapeStyle(Palette.heroFill)
         } else {
             AnyShapeStyle(.background.secondary)
         }

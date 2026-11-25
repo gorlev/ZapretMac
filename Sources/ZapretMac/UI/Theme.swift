@@ -19,6 +19,9 @@ struct Theme: Identifiable, Hashable {
     let shades: Shades?
     /// Text on the accent: white, or dark ink for bright accents like yellow.
     var darkText = false
+    /// Where the power button's gradient ends, like the app icon's
+    /// petrol-to-navy. nil: a plain accent gradient.
+    var gradientEnd: UInt32? = nil
 
     /// For `.tint`. nil keeps the system accent.
     var tint: Color? { shades.map { Color(hex: $0.base) } }
@@ -27,6 +30,16 @@ struct Theme: Identifiable, Hashable {
     /// Accent-colored text and symbols on a plain or tinted background: the
     /// deep shade in light mode, the light shade in dark mode, so both read.
     var accentText: Color { shades.map { Color(light: $0.deep, dark: $0.light) } ?? .accentColor }
+    /// The power button's fill while on: the accent fading into
+    /// `gradientEnd` (the icon's colors), or a soft accent gradient.
+    var heroFill: LinearGradient {
+        let colors = if let shades, let end = gradientEnd {
+            [Color(hex: shades.base), Color(hex: end)]
+        } else {
+            [accent.opacity(0.85), accent]
+        }
+        return LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
+    }
     /// Text and symbols on an accent fill.
     var onAccent: Color { darkText ? Color(hex: 0x16161C) : .white }
 
@@ -60,7 +73,7 @@ final class ThemeStore {
     /// Appearance). Any other Mac accent wins. Example:
     /// Theme(id: "brand", name: "Brand", shades: .init(light: 0x8EEBC4, base: 0x2BC48A, deep: 0x0F7A55), darkText: true)
     /// Petrol, the top of the icon's petrol-to-navy gradient; dark enough for white text.
-    static let brand: Theme? = Theme(id: "brand", name: "Petrol", shades: .init(light: 0x5CC8DA, base: 0x0B7285, deep: 0x095868))
+    static let brand: Theme? = Theme(id: "brand", name: "Petrol", shades: .init(light: 0x5CC8DA, base: 0x0B7285, deep: 0x095868), gradientEnd: 0x0D1A47)
 
     var themeID: String {
         didSet { if !Store.isOverridden { UserDefaults.standard.set(themeID, forKey: "appearance.accent") } }
@@ -72,7 +85,8 @@ final class ThemeStore {
     var theme: Theme {
         let chosen = Theme.all.first { $0.id == themeID } ?? Theme.all[0]
         if chosen.id == "system", macIsMulticolor, let brand = Self.brand {
-            return Theme(id: "system", name: "System", shades: brand.shades, darkText: brand.darkText)
+            return Theme(id: "system", name: "System", shades: brand.shades, darkText: brand.darkText,
+                         gradientEnd: brand.gradientEnd)
         }
         return chosen
     }
@@ -98,6 +112,7 @@ enum Palette {
     static var accent: Color { ThemeStore.shared.theme.accent }
     static var accentText: Color { ThemeStore.shared.theme.accentText }
     static var onAccent: Color { ThemeStore.shared.theme.onAccent }
+    static var heroFill: LinearGradient { ThemeStore.shared.theme.heroFill }
 }
 
 extension View {
