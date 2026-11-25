@@ -108,6 +108,7 @@ struct GeneralSettings: View {
             Text(portFooter)
                 .foregroundStyle(TPWSCommand.isValidPort(Int(portText) ?? 0) || portText.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(.red))
         }
+        ShareSettings()
         Section {
             LabeledContent("Language") {
                 Text(Locale.current.localizedString(forLanguageCode: Bundle.main.preferredLocalizations.first ?? "en")?.localizedCapitalized ?? "English")
@@ -132,6 +133,9 @@ struct GeneralSettings: View {
 
     private var portFooter: String {
         if let port = Int(portText), !TPWSCommand.isValidPort(port) { return String(localized: "Use a port from 1024 to 65535.") }
+        if model.sharedAddress != nil {
+            return String(localized: "tpws listens on 127.0.0.1 and on your network address. Press Return to apply. Browsers without the system proxy can use SOCKS5 127.0.0.1:\(String(model.prefs.port)).")
+        }
         return String(localized: "tpws listens on 127.0.0.1 only. Press Return to apply. Browsers without the system proxy can use SOCKS5 127.0.0.1:\(String(model.prefs.port)).")
     }
 
@@ -139,6 +143,66 @@ struct GeneralSettings: View {
         guard let port = Int(portText), TPWSCommand.isValidPort(port), port != model.prefs.port else { return }
         model.prefs.port = port
         model.portChanged()
+    }
+}
+
+/// S-104: share the SOCKS proxy with phones, tablets, and TVs on this network.
+struct ShareSettings: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        let prefs = model.prefs
+        Section {
+            Toggle("Share with devices on this network", isOn: Binding(get: { prefs.shareOnNetwork && !prefs.transparentMode },
+                                                                       set: { model.setShareOnNetwork($0) }))
+                .disabled(prefs.transparentMode)
+            if prefs.shareOnNetwork, !prefs.transparentMode {
+                if let address = model.sharedAddress, let text = model.sharedProxyText {
+                    LabeledContent("SOCKS5 address") {
+                        HStack(spacing: Space.sm) {
+                            Text(text)
+                                .monospacedDigit()
+                                .textSelection(.enabled)
+                            Button("Copy") {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(text, forType: .string)
+                            }
+                            .help(String(localized: "Copy the address"))
+                        }
+                    }
+                    LabeledContent {
+                        QRCode(text: NetworkShare.payload(ip: address.ip, port: prefs.port))
+                    } label: {
+                        Text("QR code")
+                        Text("Scan it in a proxy app on your phone.")
+                    }
+                } else {
+                    Label("No network address. Connect this Mac to Wi-Fi or Ethernet to share.", systemImage: "wifi.slash")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text("Sharing")
+        } footer: {
+            VStack(alignment: .leading, spacing: Space.xs) {
+                if prefs.transparentMode {
+                    Text("Sharing works with the SOCKS proxy. Turn off Transparent mode in Advanced to share.")
+                        .foregroundStyle(.secondary)
+                } else if prefs.shareOnNetwork {
+                    Text("While sharing is on, anyone on this network can use your Mac's bypass. The first time, macOS may ask whether tpws can accept incoming connections: click Allow, or other devices cannot connect.")
+                        .foregroundStyle(.secondary)
+                    Text("The Wi-Fi proxy setting on iPhone and Android takes HTTP proxies only, so use an app that supports SOCKS5 proxies and enter this address there.")
+                        .foregroundStyle(.secondary)
+                    if !model.engine.isOn {
+                        Text("Turn the bypass on to start sharing.")
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text("Lets your phone, tablet, or TV use this Mac as a SOCKS5 proxy. Off by default.")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 }
 

@@ -49,6 +49,13 @@ private struct Hero: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
                     .textSelection(.enabled)
+                // S-104: the address other devices use while sharing.
+                if model.engine.state == .running, let shared = model.sharedProxyText {
+                    Label("Devices on this network can use SOCKS5 \(shared).", systemImage: "wifi")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
             }
             if let error = model.proxy.lastError {
                 Label(error, systemImage: "exclamationmark.triangle.fill")

@@ -93,6 +93,8 @@ final class AppModel {
     let proxy: SystemProxy
     /// Serves the PAC file while the system proxy is in PAC mode (S-072).
     let pacServer = PACServer()
+    /// S-104: the Mac's LAN address, watched for changes.
+    let shareMonitor = ShareMonitor()
     let finder = StrategyFinder()
     var showFinder = false
     /// Quick tries the strategies; Thorough runs blockcheck's tpws matrix.
@@ -131,6 +133,7 @@ final class AppModel {
             if proxy.isApplied || pacServer.isRunning { Task { await self.releaseProxy() } }
             if !Store.isOverridden { Notifier.post(title: String(localized: "ZapretMac stopped"), body: reason) }
         }
+        startShareMonitor()
     }
 
     private var context: ModelContext { container.mainContext }
@@ -303,7 +306,8 @@ final class AppModel {
                            hostlistPath: Store.hostlistURL.path,
                            excludePath: exclude ? Store.excludeURL.path : nil,
                            debug: prefs.verboseLog, pidFile: Store.pidURL.path,
-                           mode: prefs.transparentMode ? .transparent : .socks)
+                           mode: prefs.transparentMode ? .transparent : .socks,
+                           shareAddress: sharedAddress?.ip)
     }
 
     func toggle() {

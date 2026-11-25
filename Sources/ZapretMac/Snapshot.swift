@@ -125,6 +125,25 @@ enum Snapshot {
                 model.prefs.useSystemProxy = false
                 model.prefs.scope = scope
             }
+            // S-104: Settings > General with sharing on (address and QR code).
+            // Only the preference is set; tpws is not started. "share" runs it alone.
+            if only == nil || only?.contains("share") == true {
+                let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
+                let sharing = model.prefs.shareOnNetwork
+                model.prefs.shareOnNetwork = true
+                model.shareMonitor.refresh()
+                model.settingsTab = .general
+                openSettings()
+                try? await Task.sleep(for: .seconds(1))
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    try? await Task.sleep(for: .seconds(0.8))
+                    let settings = NSApp.windows.first { $0.isVisible && $0 !== main && !$0.isSheet && $0.frame.width > 300 }
+                    capture(to: "\(dir)/settings-share-\(mode).png", window: settings)
+                }
+                model.prefs.shareOnNetwork = sharing
+                NSApp.windows.first { $0.isVisible && $0 !== main && !$0.isSheet && $0.frame.width > 300 }?.close()
+            }
             // S-081: a fake helper shows as ready (nothing is installed or run as
             // root); Overview in Transparent mode, and Settings > Advanced with it on.
             if only == nil || only?.contains("overview") == true || only?.contains("settings") == true {

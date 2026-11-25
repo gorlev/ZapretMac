@@ -29,10 +29,13 @@ public struct TPWSCommand: Equatable, Sendable {
     /// SOCKS mode only: the helper tracks its own tpws.
     public var pidFile: String?
     public var mode: Mode
+    /// S-104: a LAN IPv4 address to listen on as well as 127.0.0.1, so other
+    /// devices can use the proxy. SOCKS mode only; Transparent mode ignores it.
+    public var shareAddress: String?
 
     public init(port: Int, strategy: [String], scope: Scope,
                 hostlistPath: String? = nil, excludePath: String? = nil, debug: Bool = true,
-                pidFile: String? = nil, mode: Mode = .socks) {
+                pidFile: String? = nil, mode: Mode = .socks, shareAddress: String? = nil) {
         self.port = port
         self.strategy = strategy
         self.scope = scope
@@ -41,13 +44,19 @@ public struct TPWSCommand: Equatable, Sendable {
         self.debug = debug
         self.pidFile = pidFile
         self.mode = mode
+        self.shareAddress = shareAddress
     }
 
     /// In Transparent mode: only strategy, list, and debug flags, which is
     /// what `HelperArguments.problem(in:allowedFolders:)` accepts.
     public var arguments: [String] {
         var out: [String] = []
-        if mode == .socks { out = ["--socks", "--bind-addr=127.0.0.1", "--port=\(port)"] }
+        if mode == .socks {
+            // Every --bind-addr starts its own listener on the one --port.
+            out = ["--socks", "--bind-addr=127.0.0.1"]
+            if let shareAddress, NetworkShare.isShareable(shareAddress) { out.append("--bind-addr=\(shareAddress)") }
+            out.append("--port=\(port)")
+        }
         if debug { out.append("--debug=1") }
         if mode == .socks, let pidFile { out.append("--pidfile=\(pidFile)") }
         // Lists belong to a desync profile: with several profiles (`--new`),

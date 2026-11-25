@@ -375,6 +375,88 @@ enum SelfTest {
             // runs as root, pf is never touched, and the system proxy stays off.
             await checkTransparentMode(model: model)
 
+            // S-104
+            // Sharing with the network: tpws also listens on the LAN address.
+            // Connecting from this Mac to its own LAN address needs no other device.
+            do {
+                /// Whether ip:port takes a TCP connection, and whether it answers a
+                /// SOCKS5 greeting (no authentication) on it.
+                @MainActor func socksProbe(_ ip: String, _ port: Int) async -> (connects: Bool, greets: Bool) {
+                    await Task.detached {
+                        let fd = socket(AF_INET, SOCK_STREAM, 0)
+                        guard fd >= 0 else { return (false, false) }
+                        defer { close(fd) }
+                        var timeout = timeval(tv_sec: 3, tv_usec: 0)
+                        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
+                        var addr = sockaddr_in()
+                        addr.sin_family = sa_family_t(AF_INET)
+                        addr.sin_port = in_port_t(UInt16(port).bigEndian)
+                        addr.sin_addr.s_addr = inet_addr(ip)
+                        let connected = withUnsafePointer(to: &addr) {
+                            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                                connect(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) == 0
+                            }
+                        }
+                        guard connected else { return (false, false) }
+                        let hello: [UInt8] = [5, 1, 0]
+                        guard write(fd, hello, hello.count) == hello.count else { return (true, false) }
+                        var reply = [UInt8](repeating: 0, count: 2)
+                        return (true, read(fd, &reply, 2) == 2 && reply == [5, 0])
+                    }.value
+                }
+                @MainActor func socksGreets(_ ip: String, _ port: Int) async -> Bool { await socksProbe(ip, port).greets }
+                @MainActor func waitRunning() async {
+                    for _ in 0..<50 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+                }
+                check("sharing is off by default", !model.prefs.shareOnNetwork && model.sharedAddress == nil)
+                if !model.engine.isOn { model.turnOn() }
+                await waitRunning()
+                model.shareMonitor.refresh()
+                if let lan = model.shareMonitor.address {
+                    let port = model.prefs.port
+                    print("INFO sharing on \(lan.interface) \(lan.ip)")
+                    check("before sharing, the LAN address does not take connections", !(await socksProbe(lan.ip, port).connects))
+                    let pidBefore = model.engine.pid
+                    model.setShareOnNetwork(true)
+                    await waitRunning()
+                    check("sharing restarts tpws with a LAN bind next to 127.0.0.1",
+                          model.engine.state == .running && model.engine.pid != pidBefore
+                          && model.command.arguments.contains("--bind-addr=127.0.0.1")
+                          && model.command.arguments.contains("--bind-addr=\(lan.ip)")
+                          && model.engine.commandLine.contains("--bind-addr=\(lan.ip)"), model.engine.commandLine)
+                    check("the shared address is the LAN address and port", model.sharedProxyText == "\(lan.ip):\(port)")
+                    // With the macOS firewall on, the kernel takes the connection but
+                    // holds it until someone clicks Allow in its prompt for tpws (or
+                    // tpws is listed in System Settings > Network > Firewall).
+                    let lanProbe = await socksProbe(lan.ip, port)
+                    let firewall = "/usr/libexec/ApplicationFirewall/socketfilterfw"
+                    let firewallOn = runTool(URL(fileURLWithPath: firewall), ["--getglobalstate"]).output.contains("State = 1")
+                    let listed = runTool(URL(fileURLWithPath: firewall), ["--listapps"]).output.contains(Engine.binaryURL.path)
+                    if !lanProbe.greets, lanProbe.connects, firewallOn, !listed {
+                        print("INFO the macOS firewall holds connections to tpws until it is allowed: the LAN SOCKS5 check was skipped")
+                        check("tpws listens on the LAN address", lanProbe.connects)
+                    } else {
+                        check("tpws takes SOCKS5 connections on the LAN address", lanProbe.greets, "connects \(lanProbe.connects), firewall on \(firewallOn), listed \(listed)")
+                    }
+                    check("tpws still takes SOCKS5 connections on 127.0.0.1", await socksGreets("127.0.0.1", port))
+                    model.setShareOnNetwork(false)
+                    await waitRunning()
+                    let loopbackAfter = await socksGreets("127.0.0.1", port)
+                    check("turning sharing off keeps tpws running on 127.0.0.1 only",
+                          model.engine.state == .running && !model.engine.commandLine.contains("--bind-addr=\(lan.ip)")
+                          && loopbackAfter, model.engine.commandLine)
+                    check("after sharing, the LAN address no longer takes connections", !(await socksProbe(lan.ip, port).connects))
+                } else {
+                    print("INFO no LAN address on this Mac: the LAN checks were skipped")
+                }
+                check("Transparent mode never shares", {
+                    model.prefs.shareOnNetwork = true
+                    model.prefs.transparentMode = true
+                    defer { model.prefs.transparentMode = false; model.prefs.shareOnNetwork = false }
+                    return model.sharedAddress == nil && !model.command.arguments.contains { $0.hasPrefix("--bind") }
+                }())
+            }
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 
