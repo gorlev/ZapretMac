@@ -118,24 +118,20 @@ final class StrategyFinder {
         guard let port = helpers.reservePort() else { return allFail(String(localized: "No free port")) }
         defer { helpers.release(port) }
         let command = TPWSCommand(port: port, strategy: arguments, scope: .allSites, debug: false)
-        let process = Process()
-        process.executableURL = Engine.binaryURL
-        process.arguments = command.arguments
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        do { try process.run() } catch { return allFail(String(localized: "tpws did not start")) }
-        helpers.track(process, port: port)
-        defer {
-            // Never wait forever for tpws to quit: a stuck one is killed.
-            process.terminate()
-            let deadline = Date.now.addingTimeInterval(1.5)
-            while process.isRunning, Date.now < deadline { usleep(20_000) }
-            if process.isRunning { kill(process.processIdentifier, SIGKILL) }
+        // Tries always run as the user, never through the privileged helper.
+        let runner = LocalTPWSRunner()
+        let process: any TPWSHandle
+        do { process = try runner.start(command, output: nil, exit: nil) } catch {
+            return allFail(String(localized: "tpws did not start"))
         }
+        helpers.track(process, port: port)
+        // Never wait forever for tpws to quit: a stuck one is killed.
+        defer { process.stop() }
         // Wait until tpws accepts connections, up to a second.
-        for _ in 0..<20 {
-            if isListening(port) || Task.isCancelled { break }
-            try? await Task.sleep(for: .milliseconds(50))
+        let plan = TPWSReadinessPlan.trial
+        for _ in 0..<plan.attempts {
+            if await runner.isReady(port: port) || Task.isCancelled { break }
+            try? await Task.sleep(for: plan.interval)
         }
         if Task.isCancelled { return nil }
         guard process.isRunning else { return allFail(String(localized: "tpws refused these flags")) }
@@ -177,7 +173,7 @@ final class StrategyFinder {
     final class Helpers: Sendable {
         private struct State {
             var ports: Set<Int> = []
-            var processes: [Int: Process] = [:]
+            var processes: [Int: any TPWSHandle] = [:]
         }
         private let state = Mutex(State())
 
@@ -191,7 +187,7 @@ final class StrategyFinder {
             return nil
         }
 
-        nonisolated func track(_ process: Process, port: Int) {
+        nonisolated func track(_ process: any TPWSHandle, port: Int) {
             state.withLock { $0.processes[port] = process }
         }
 
@@ -204,7 +200,7 @@ final class StrategyFinder {
 
         nonisolated func terminateAll() {
             let running = state.withLock { Array($0.processes.values) }
-            for process in running where process.isRunning { process.terminate() }
+            for process in running { process.terminate() }
         }
     }
 
@@ -224,20 +220,5 @@ final class StrategyFinder {
             }
         }
         return bound ? Int(UInt16(bigEndian: addr.sin_port)) : nil
-    }
-
-    nonisolated static func isListening(_ port: Int) -> Bool {
-        let fd = socket(AF_INET, SOCK_STREAM, 0)
-        guard fd >= 0 else { return false }
-        defer { close(fd) }
-        var addr = sockaddr_in()
-        addr.sin_family = sa_family_t(AF_INET)
-        addr.sin_port = in_port_t(UInt16(port).bigEndian)
-        addr.sin_addr.s_addr = inet_addr("127.0.0.1")
-        return withUnsafePointer(to: &addr) {
-            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
-                connect(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) == 0
-            }
-        }
     }
 }

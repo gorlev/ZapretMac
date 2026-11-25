@@ -31,6 +31,10 @@ enum SelfTest {
 
             check("tpws is inside the app", Engine.binaryExists, Engine.binaryURL.path)
 
+            // The engine's restart-once and failure rules, on a fake tpws:
+            // no real process is started or killed.
+            await checkEngineWithFakeRunner()
+
             // The page is remembered in real runs only.
             let savedPage = UserDefaults.standard.string(forKey: "sidebar.page")
             model.sidebar = .log
@@ -80,12 +84,9 @@ enum SelfTest {
 
             // A tpws left behind by a force-quit run holds the port: turning on
             // must stop it first.
-            let stray = Process()
-            stray.executableURL = Engine.binaryURL
-            stray.arguments = ["--socks", "--bind-addr=127.0.0.1", "--port=\(model.prefs.port)", "--pidfile=\(Store.pidURL.path)"]
-            stray.standardOutput = FileHandle.nullDevice
-            stray.standardError = FileHandle.nullDevice
-            try? stray.run()
+            let strayCommand = TPWSCommand(port: model.prefs.port, strategy: [], scope: .allSites, debug: false,
+                                           pidFile: Store.pidURL.path)
+            let stray = try? LocalTPWSRunner().start(strayCommand, output: nil, exit: nil)
             try? await Task.sleep(for: .milliseconds(400))
 
             // On and off, with real traffic through tpws.
@@ -93,7 +94,7 @@ enum SelfTest {
             model.turnOn()
             for _ in 0..<30 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
             check("turning on starts tpws", model.engine.state == .running, "\(model.engine.state)")
-            check("a leftover tpws on the port is stopped first", !stray.isRunning)
+            check("a leftover tpws on the port is stopped first", stray?.isRunning == false)
             if let url = URL(string: "https://example.com") {
                 let outcome = await SiteCheck.fetch(url, socksPort: model.prefs.port)
                 check("a site opens through tpws", outcome.isOK, "\(outcome)")
@@ -339,6 +340,68 @@ enum SelfTest {
             print(failures == 0 ? "SELFTEST PASS \(count) checks" : "SELFTEST FAIL \(failures) of \(count) checks")
             finish(code: failures == 0 ? 0 : 1)
         }
+    }
+
+    /// Runs an engine on a `FakeTPWSRunner` through start, output, a crash and
+    /// restart, a second crash, and stop.
+    private static func checkEngineWithFakeRunner() async {
+        let fake = FakeTPWSRunner()
+        let engine = Engine(runner: fake)
+        var failure: String?
+        engine.onFailure = { failure = $0 }
+        func settle(until done: () -> Bool) async {
+            for _ in 0..<100 where !done() { try? await Task.sleep(for: .milliseconds(20)) }
+        }
+        let command = TPWSCommand(port: 1, strategy: ["--split-pos=2"], scope: .allSites)
+        engine.start(command)
+        await settle { engine.state == .running }
+        check("a fake tpws that accepts connections is running", engine.state == .running && fake.handles.count == 1,
+              "\(engine.state), \(fake.handles.count) starts")
+        check("the engine passes its command to the runner", fake.latest?.command == command)
+        check("the command line names the runner's tpws", engine.commandLine.hasPrefix("/fake/tpws --socks"), engine.commandLine)
+
+        guard let first = fake.latest else { return }
+        first.print(["127.0.0.1:50000 connected from 127.0.0.1:50001", "hostname='fake.example'"])
+        await settle { engine.connections > 0 && engine.hostsSeen.contains("fake.example") }
+        check("output lines from the runner reach the log", engine.connections == 1 && engine.hostsSeen.contains("fake.example"),
+              "\(engine.connections) \(engine.hostsSeen)")
+
+        first.quit(code: 1)
+        await settle { fake.handles.count == 2 && engine.state == .running }
+        check("a fake tpws quitting by itself is restarted once", engine.autoRestarts == 1 && fake.handles.count == 2
+              && engine.state == .running, "\(engine.state), restarts \(engine.autoRestarts), starts \(fake.handles.count)")
+        let linesBefore = engine.lines.count
+        first.print(["late line from the old tpws"])
+        try? await Task.sleep(for: .milliseconds(100))
+        check("output from a replaced tpws is ignored", engine.lines.count == linesBefore)
+
+        guard let second = fake.latest else { return }
+        second.print(["bind: Address already in use"])
+        second.quit(code: 2)
+        await settle { failure != nil }
+        check("a second quit within a minute fails with the last error", engine.state == .failed("bind: Address already in use")
+              && failure == "bind: Address already in use" && fake.handles.count == 2, "\(engine.state)")
+
+        engine.start(command)
+        await settle { engine.state == .running }
+        guard let third = fake.latest else { return }
+        engine.stop()
+        try? await Task.sleep(for: .milliseconds(100))
+        check("stopping asks the runner to stop and does not restart", third.stopCount == 1 && !third.isRunning
+              && engine.state == .stopped && fake.handles.count == 3, "\(engine.state), starts \(fake.handles.count)")
+
+        // A tpws that quits before its port answers fails with its exit code.
+        let silent = FakeTPWSRunner()
+        silent.ready = false
+        let quiet = Engine(runner: silent)
+        quiet.start(TPWSCommand(port: 1, strategy: [], scope: .allSites, debug: false))
+        check("a fake tpws whose port does not answer stays starting", quiet.state == .starting)
+        silent.latest?.quit(code: 3)
+        await settle { silent.handles.count == 2 }
+        silent.latest?.quit(code: 3)
+        await settle { quiet.state != .starting }
+        check("quitting twice before ready fails with the exit code", quiet.state == .failed("tpws quit with code 3."),
+              "\(quiet.state)")
     }
 
     /// Fetches a URL with no proxy. Status 0 when nothing answers.
