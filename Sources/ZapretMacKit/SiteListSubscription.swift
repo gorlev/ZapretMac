@@ -42,6 +42,10 @@ public enum SiteListSubscription {
         /// Text, but no domain in it.
         case empty
         case tooLarge
+        /// A list of domains was expected, and it holds only IP addresses.
+        case onlyAddresses
+        /// A list of IP addresses was expected, and it holds only domains.
+        case onlyDomains
     }
 
     /// Lists bigger than this are refused (zapret's biggest lists are a few MB).
@@ -51,15 +55,28 @@ public enum SiteListSubscription {
 
     /// The cleaned domains in a downloaded list, parsed like pasted sites.
     public static func domains(from data: Data) throws -> [String] {
+        try entries(from: data, kind: .domains)
+    }
+
+    /// The cleaned entries of a downloaded list: domains, or IP addresses and
+    /// ranges (S-103). In a list of domains, address lines are skipped, so an
+    /// IP list subscribed as domains says so instead of feeding the hostlist.
+    public static func entries(from data: Data, kind: ListKind) throws -> [String] {
         guard data.count <= maxBytes else { throw Failure.tooLarge }
         let raw = Gzip.isGzip(data) ? try Gzip.decompress(data) : data
         guard raw.count <= maxBytes * 4 else { throw Failure.tooLarge }
         guard !raw.prefix(4096).contains(0), let text = String(data: raw, encoding: .utf8) else { throw Failure.notText }
         let trimmed = text.drop(while: \.isWhitespace).prefix(64).lowercased()
         if trimmed.hasPrefix("<!doctype") || trimmed.hasPrefix("<html") { throw Failure.notText }
-        let domains = Domains.parseList(text)
-        guard !domains.isEmpty else { throw Failure.empty }
-        return domains
+        let routed = IPRanges.route(text)
+        switch kind {
+        case .domains:
+            guard !routed.domains.isEmpty else { throw routed.addresses.isEmpty ? Failure.empty : Failure.onlyAddresses }
+            return routed.domains
+        case .addresses:
+            guard !routed.addresses.isEmpty else { throw routed.domains.isEmpty ? Failure.empty : Failure.onlyDomains }
+            return routed.addresses
+        }
     }
 
     /// The list address someone typed, or nil when it cannot be a list:

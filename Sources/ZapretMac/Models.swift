@@ -18,6 +18,10 @@ final class DomainEntry {
         self.domain = domain
         self.isExcluded = isExcluded
     }
+
+    /// An IP address or range (S-103) rather than a domain: it goes to the
+    /// ipset file. Read from the text, so stores need no new field.
+    var isAddress: Bool { IPRanges.isAddress(domain) }
 }
 
 /// A strategy a person made, stored as tpws flags.
@@ -119,6 +123,8 @@ final class AppModel {
     /// The Add Subscription sheet, and which list a new subscription feeds.
     var showAddSubscription = false
     var addSubscriptionExcluded = false
+    /// A suggested list the sheet fills in when it opens (S-106; snapshots use it).
+    var addSubscriptionSuggestion: SuggestedList?
     /// Subscriptions downloading now, by uuid: their rows show progress.
     var updatingSubscriptions = Set<UUID>()
     /// Checks once an hour whether a subscription is a day old.
@@ -246,12 +252,14 @@ final class AppModel {
         return all.filter { $0.isExcluded == excluded }
     }
 
-    /// Adds every domain in pasted text. Returns how many were new.
+    /// Adds every domain, IP address, and range in pasted text. Returns how
+    /// many were new.
     @discardableResult
     func addDomains(from text: String, excluded: Bool) -> Int {
         let existing = Set(domains(excluded: excluded).map(\.domain))
+        let routed = IPRanges.route(text)
         var added = 0
-        for domain in Domains.parseList(text) where !existing.contains(domain) {
+        for domain in routed.domains + routed.addresses where !existing.contains(domain) {
             context.insert(DomainEntry(domain: domain, isExcluded: excluded))
             added += 1
         }
@@ -279,19 +287,31 @@ final class AppModel {
 
     /// My list plus the turned-on subscriptions: what tpws and the PAC file use.
     func mergedDomains(excluded: Bool) -> [String] {
-        let own = domains(excluded: excluded).filter(\.isEnabled).map(\.domain)
-        let lists = subscriptions(excluded: excluded).filter(\.isEnabled).map(subscriptionDomains)
+        merged(.domains, excluded: excluded)
+    }
+
+    /// My list's IP addresses and ranges plus the turned-on IP lists (S-103).
+    func mergedAddresses(excluded: Bool) -> [String] {
+        merged(.addresses, excluded: excluded)
+    }
+
+    private func merged(_ kind: ListKind, excluded: Bool) -> [String] {
+        let own = domains(excluded: excluded).filter { $0.isEnabled && $0.isAddress == (kind == .addresses) }.map(\.domain)
+        let lists = subscriptions(excluded: excluded).filter { $0.isEnabled && $0.listKind == kind }.map(subscriptionDomains)
         return SiteListSubscription.merge(own, lists)
     }
 
-    /// Writes My list and the turned-on subscriptions into the two files tpws
-    /// reads. Returns true when either file's domains changed.
+    /// Writes My list and the turned-on subscriptions into the files tpws
+    /// reads: hostlists and ipsets. Returns true when any file changed.
     @discardableResult
     func writeLists() -> Bool {
         var changed = false
-        for excluded in [false, true] {
-            let text = Domains.fileContents(mergedDomains(excluded: excluded))
-            let url = excluded ? Store.excludeURL : Store.hostlistURL
+        let files: [(URL, [String])] = [
+            (Store.hostlistURL, mergedDomains(excluded: false)), (Store.excludeURL, mergedDomains(excluded: true)),
+            (Store.ipsetURL, mergedAddresses(excluded: false)), (Store.ipsetExcludeURL, mergedAddresses(excluded: true)),
+        ]
+        for (url, entries) in files {
+            let text = Domains.fileContents(entries)
             if (try? String(contentsOf: url, encoding: .utf8)) != text {
                 changed = true
                 try? text.write(to: url, atomically: true, encoding: .utf8)
@@ -304,12 +324,18 @@ final class AppModel {
 
     // MARK: - On and off
 
+    /// Each list file is passed only when it has entries; the hostlist also
+    /// when nothing else is in My list, so an empty My list still matches nothing.
     var command: TPWSCommand {
-        let exclude = domains(excluded: true).contains(where: \.isEnabled)
-            || subscriptions(excluded: true).contains { $0.isEnabled && $0.domainCount > 0 }
+        let hasDomains = !mergedDomains(excluded: false).isEmpty
+        let hasAddresses = !mergedAddresses(excluded: false).isEmpty
+        let exclude = !mergedDomains(excluded: true).isEmpty
+        let excludeAddresses = !mergedAddresses(excluded: true).isEmpty
         return TPWSCommand(port: prefs.port, strategy: activeStrategy.arguments, scope: prefs.scope,
-                           hostlistPath: Store.hostlistURL.path,
+                           hostlistPath: hasDomains || !hasAddresses ? Store.hostlistURL.path : nil,
                            excludePath: exclude ? Store.excludeURL.path : nil,
+                           ipsetPath: hasAddresses ? Store.ipsetURL.path : nil,
+                           ipsetExcludePath: excludeAddresses ? Store.ipsetExcludeURL.path : nil,
                            debug: prefs.verboseLog, pidFile: Store.pidURL.path,
                            mode: prefs.transparentMode ? .transparent : .socks,
                            shareAddress: sharedAddress?.ip)

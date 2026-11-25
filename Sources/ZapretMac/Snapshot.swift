@@ -64,6 +64,22 @@ enum Snapshot {
                     try? await Task.sleep(for: .seconds(0.6))
                 }
             }
+            // S-103 S-106: the Add Subscription sheet with an IP list suggestion
+            // chosen (the plain sheet above shows the suggestions). Sites with its
+            // IP Addresses section is domains-<mode>.png (the seed has ranges).
+            // Runs alone with APP_SNAPSHOT_PAGES=domains,suggestions.
+            if only == nil || only?.contains("extras") == true || only?.contains("suggestions") == true {
+                let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    model.addSubscriptionSuggestion = SuggestedLists.list(kind: .addresses).first
+                    model.requestAddSubscription(excluded: false)
+                    try? await Task.sleep(for: .seconds(1))
+                    capture(to: "\(dir)/subscription-suggested-\(mode).png", window: main?.attachedSheet)
+                    model.showAddSubscription = false
+                    try? await Task.sleep(for: .seconds(0.6))
+                }
+            }
             // The strategy editor sheet, then Overview with the bypass off.
             if only == nil || only?.contains("extras") == true {
                 let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }

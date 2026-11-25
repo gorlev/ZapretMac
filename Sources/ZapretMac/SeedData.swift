@@ -17,6 +17,8 @@ enum SeedData {
         model.addDomains(from: "youtube.com googlevideo.com discord.com discord.gg discordapp.com roblox.com wattpad.com x.com",
                          excluded: false)
         model.addDomains(from: "apple.com icloud.com", excluded: true)
+        // S-103: IP ranges (documentation ranges), shown in their own section.
+        model.addDomains(from: "203.0.113.0/24 198.51.100.7 2001:db8:4e8::/48", excluded: false)
         if let off = model.domains(excluded: false).first(where: { $0.domain == "wattpad.com" }) { off.isEnabled = false }
         context.insert(CustomStrategy(name: "My ISP", commandLine: "--tlsrec=sniext+1 --split-pos=2,midsld --oob"))
         // Two subscriptions with no network: a list in the store folder, and
