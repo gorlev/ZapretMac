@@ -75,7 +75,8 @@ private struct SidebarStatus: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text(model.engine.state.title)
                     .font(.callout.weight(.medium))
-                Text(model.engine.isOn ? "127.0.0.1:\(String(model.prefs.port))" : String(localized: "Not running"))
+                Text(!model.engine.isOn ? String(localized: "Not running")
+                     : model.prefs.transparentMode ? String(localized: "Transparent mode") : "127.0.0.1:\(String(model.prefs.port))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()

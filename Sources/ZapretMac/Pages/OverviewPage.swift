@@ -166,12 +166,22 @@ private struct StatsRow: View {
                 StatTile(title: "Running for", symbol: "clock",
                          value: model.engine.startedAt.map { Uptime.format(context.date.timeIntervalSince($0)) } ?? "—")
             }
+            // In Transparent mode tpws runs inside the helper and its output,
+            // which these counts come from, is not seen.
             StatTile(title: "Connections", symbol: "arrow.left.arrow.right",
-                     value: model.engine.isOn ? model.engine.connections.formatted() : "—")
+                     value: counting ? model.engine.connections.formatted() : "—", help: countHelp)
             StatTile(title: "Sites seen", symbol: "globe",
-                     value: model.engine.isOn ? model.engine.hostsSeen.count.formatted() : "—")
+                     value: counting ? model.engine.hostsSeen.count.formatted() : "—", help: countHelp)
         }
         .gridProbe("stats", area: "overview")
+    }
+
+    private var counting: Bool { model.engine.isOn && !model.prefs.transparentMode }
+
+    private var countHelp: String {
+        model.prefs.transparentMode
+            ? String(localized: "Transparent mode: tpws runs as root in ZapretMac's helper, so its output is not shown here.")
+            : ""
     }
 }
 
@@ -179,6 +189,7 @@ private struct StatTile: View {
     let title: LocalizedStringKey
     let symbol: String
     let value: String
+    var help: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
@@ -194,6 +205,7 @@ private struct StatTile: View {
         .padding(Space.lg)
         .card()
         .accessibilityElement(children: .combine)
+        .help(help)
     }
 }
 
