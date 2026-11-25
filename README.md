@@ -127,6 +127,8 @@ cd ZapretMac
 
 `--open` restarts the app with the new build. Build products stay in `~/Library/Developer/ZapretMac`, outside the repository.
 
+Release builds carry no debug symbols or local folder paths. To build a copy to share without your own certificate, sign it ad hoc with `SIGN_IDENTITY=- ./build.sh`. Everything works in an ad hoc build except Transparent mode, which needs a team-signed build.
+
 ## Getting started
 
 1. **Turn it on.** Click the round switch, or press <kbd>⌘</kbd><kbd>B</kbd>. `tpws` starts as a SOCKS5 proxy on `127.0.0.1`.

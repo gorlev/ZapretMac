@@ -3,7 +3,7 @@
 # Build products live in ~/Library/Developer/ZapretMac, outside the repo
 # (and outside Dropbox or iCloud, which would try to sync them).
 #
-# Usage: ./build.sh            release build, install
+# Usage: ./build.sh            release build, install (no debug symbols or local paths)
 #        ./build.sh --debug    debug build, install
 #        ./build.sh --open     install, then quit the running copy and open the new one
 set -euo pipefail
@@ -58,6 +58,11 @@ cp "$bin" "$app/Contents/MacOS/$name"
 cp "$helper" "$app/Contents/MacOS/${name}Helper"
 cp "$here/LaunchDaemon.plist" "$app/Contents/Library/LaunchDaemons/com.gorlev.zapretmac.helper.plist"
 cp "$tpws_dir/tpws" "$app/Contents/Helpers/tpws"
+# Release builds drop debug symbols: they hold the absolute paths of the
+# source and build folders (your home folder, so your user name).
+if [[ $config == release ]]; then
+  strip -S -x "$app/Contents/MacOS/$name" "$app/Contents/MacOS/${name}Helper" "$app/Contents/Helpers/tpws" 2>&1 | grep -v "invalidate the code signature" || true
+fi
 commit=$(cat "$here/Vendor/zapret/COMMIT" 2>/dev/null || echo unknown)
 sed -e "s/__BUILD__/$(date +%Y%m%d%H%M)/" -e "s/__ZAPRET_COMMIT__/$commit/" "$here/Info.plist.in" > "$app/Contents/Info.plist"
 # The icon: Icon/AppIcon.icon -> Resources/Assets.car + AppIcon.icns, rebuilt when it changed.
@@ -70,6 +75,12 @@ if [[ -d "$here/Icon/AppIcon.icon" ]]; then
 fi
 # Translations: Localization/<lang>.json -> Resources/<lang>.lproj (checked first).
 python3 "$here/tools/l10n.py" build "$app/Contents/Resources" || { echo "localization check failed"; exit 1; }
+# Nothing that leaves this Mac may name it: no home-folder path in a release build.
+if [[ $config == release ]] && grep -r -l -a -F "$HOME" "$app" >/dev/null 2>&1; then
+  echo "build failed: the app contains your home folder path:"
+  grep -r -l -a -F "$HOME" "$app"
+  exit 1
+fi
 xattr -cr "$app"
 codesign --force --options runtime --sign "$identity" "$app/Contents/Helpers/tpws" 2>&1 | grep -v "replacing existing signature" || true
 codesign --force --options runtime --identifier com.gorlev.zapretmac.helper --sign "$identity" "$app/Contents/MacOS/${name}Helper" 2>&1 | grep -v "replacing existing signature" || true
