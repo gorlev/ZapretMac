@@ -7,6 +7,8 @@
 **A native macOS app for [zapret](https://github.com/bol-van/zapret)'s DPI bypass.**
 One switch, ready-made strategies, site lists, and a strategy finder, in a SwiftUI app that feels at home on your Mac.
 
+[![Latest release](https://img.shields.io/github/v/release/gorlev/ZapretMac?color=0B7285&label=release)](https://github.com/gorlev/ZapretMac/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/gorlev/ZapretMac/total?color=0B7285)](https://github.com/gorlev/ZapretMac/releases)
 [![macOS 26+](https://img.shields.io/badge/macOS-26%2B-000000?logo=apple&logoColor=white)](#install)
 [![Swift 6.2](https://img.shields.io/badge/Swift-6.2-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-0B7285)](LICENSE)
@@ -226,14 +228,7 @@ The translations were written to read naturally in each language rather than wor
 
 ## Contributing
 
-Issues and pull requests are welcome. Before opening a pull request:
-
-1. Run `./build.sh`; it should build with no warnings.
-2. Run the unit tests and `tools/selftest.sh`.
-3. For UI changes, run `tools/snap.sh` and check the screenshots in light and dark mode.
-4. For new or changed text, run `tools/l10n-extract.sh` and add the strings in every language.
-
-Please describe what a user can now do in the pull request title.
+Bug reports, strategy reports, translations, and code are all welcome. Questions go in [Discussions](https://github.com/gorlev/ZapretMac/discussions), bugs and ideas in [Issues](https://github.com/gorlev/ZapretMac/issues/new/choose), and security problems through a [private report](SECURITY.md). Before opening a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md): it lists the checks to run and how translations work.
 
 ## Acknowledgements and license
 

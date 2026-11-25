@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or help
+    url: https://github.com/gorlev/ZapretMac/discussions
+    about: Ask how to use ZapretMac, or which strategy works on your network.
+  - name: Security vulnerability
+    url: https://github.com/gorlev/ZapretMac/security/advisories/new
+    about: Report security problems privately, not in a public issue.
+  - name: Problem with tpws itself
+    url: https://github.com/bol-van/zapret
+    about: If no tpws option gets past your filter, the zapret project is the place to ask.

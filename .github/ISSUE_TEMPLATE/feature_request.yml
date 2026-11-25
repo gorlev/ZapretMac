@@ -1,0 +1,25 @@
+name: Feature request
+description: An idea that would make ZapretMac better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: Describe what you are trying to do, and what makes it hard today.
+      placeholder: "I switch between home and office networks, and each needs a different strategy…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could ZapretMac help?
+      description: How you imagine it working. Screenshots or sketches are welcome.
+
+  - type: textarea
+    id: zapret
+    attributes:
+      label: Related zapret option
+      description: If this maps to a tpws option or a zapret feature, name it here.
+      placeholder: "--hostlist-auto-fail-threshold"

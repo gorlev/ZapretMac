@@ -1,0 +1,95 @@
+name: Bug report
+description: Something in ZapretMac does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. If a site still does not open but ZapretMac itself works, try **Find a Strategy** first, or ask in [Discussions](https://github.com/gorlev/ZapretMac/discussions).
+        **Security problems:** please report them privately instead (see SECURITY.md).
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        1. Turned on System proxy
+        2. Opened example.com in Safari
+        3. Expected the page to load; got "connection reset" instead
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: ZapretMac version
+      description: ZapretMac → About ZapretMac, or Settings → About.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "macOS 26.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: chip
+    attributes:
+      label: Mac
+      options:
+        - Apple silicon (M1 or later)
+        - Intel
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install ZapretMac?
+      options:
+        - Downloaded disk image (Apple silicon)
+        - Downloaded disk image (Intel)
+        - Downloaded disk image (Universal)
+        - Built from source
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options:
+        - SOCKS5 proxy only
+        - System proxy, all sites
+        - System proxy, my list (PAC)
+        - Transparent mode
+        - Not related to a mode
+    validations:
+      required: true
+
+  - type: input
+    id: strategy
+    attributes:
+      label: Strategy
+      description: The built-in strategy's name, or your own strategy's tpws options.
+      placeholder: "TLS Record + Split"
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: |
+        Open the Log page, reproduce the problem, and paste the relevant lines. "Copy tpws Command" gives the exact command too.
+        Remove anything you don't want to share, such as sites you visited.
+      render: text
+
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else?
+      description: Screenshots, your network setup (VPN, other proxies), or how often it happens.
