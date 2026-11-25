@@ -78,7 +78,7 @@ struct TransparentCommandTests {
     @Test func commandLineShowsWhatTheHelperAdds() {
         let command = TPWSCommand(port: 1088, strategy: ["--split-pos=2"], scope: .allSites, debug: false, mode: .transparent)
         #expect(command.arguments == ["--split-pos=2"])
-        #expect(command.commandLine(binary: "/A/tpws") == "/A/tpws --user=root --port=1088 --bind-addr=127.0.0.1 --split-pos=2")
+        #expect(command.commandLine(binary: "/A/tpws") == "/A/tpws --user=root --port=1088 --bind-addr=127.0.0.1 --bind-iface6=lo0 --bind-linklocal=force --split-pos=2")
     }
 
     @Test func aListOutsideTheDataFolderIsRefused() {

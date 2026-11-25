@@ -375,6 +375,36 @@ enum SelfTest {
             // runs as root, pf is never touched, and the system proxy stays off.
             await checkTransparentMode(model: model)
 
+            // S-105 S-107
+            // IPv6 in Transparent mode (only printed, never loaded into pf), and
+            // the remaining tpws options: tpws and the helper's validator accept them.
+            let rules6 = runTool(helperBinary, ["--print-rules", "1088"])
+            check("the helper's pf rules send IPv6 web traffic to tpws on fe80::1",
+                  rules6.status == 0
+                  && rules6.output.contains("rdr pass on lo0 inet6 proto tcp from !::1 to any port {80,443} -> fe80::1 port 1088")
+                  && rules6.output.contains("pass out route-to (lo0 fe80::1) inet6 proto tcp from any to any port {80,443} user { >root }"),
+                  rules6.output)
+            check("the helper binds tpws to 127.0.0.1 and lo0's link-local address",
+                  rules6.output.contains("--bind-addr=127.0.0.1 --bind-iface6=lo0 --bind-linklocal=force"), rules6.output)
+            let advanced = StrategyOptions(commandLine: "--split-pos=1,midsld --disorder=tls --oob=http --oob-data=0x01"
+                                           + " --filter-l7=http,tls,unknown --tamper-start=n1 --tamper-cutoff=n3")
+            check("the editor reads every new option into its own field",
+                  advanced.extra.isEmpty && advanced.disorderScope == .tls && advanced.oobScope == .http
+                  && advanced.oobData == "0x01" && advanced.protocolFilter == "http,tls,unknown"
+                  && advanced.tamperStart == "n1" && advanced.tamperCutoff == "n3", "\(advanced.extra)")
+            let advancedRun = await Engine.dryRun(advanced.arguments)
+            check("tpws accepts a strategy using every new option", advancedRun.ok, advancedRun.output)
+            let bindRun = await Engine.dryRun(["--bind-addr=127.0.0.1", "--bind-iface6=lo0", "--bind-linklocal=force"])
+            check("tpws accepts the IPv6 link-local bind", bindRun.ok, bindRun.output)
+            let advancedCommand = TPWSCommand(port: model.prefs.port, strategy: advanced.arguments, scope: .allSites,
+                                              debug: true, mode: .transparent)
+            check("the transparent arguments for that strategy pass the validator",
+                  HelperArguments.problem(in: advancedCommand.arguments,
+                                          allowedFolders: HelperArguments.allowedFolders(home: NSHomeDirectory())) == nil,
+                  advancedCommand.arguments.joined(separator: " "))
+            let advancedHelper = runTool(helperBinary, ["--validate"] + advancedCommand.arguments)
+            check("the helper accepts that strategy", advancedHelper.status == 0, advancedHelper.output)
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 

@@ -110,6 +110,24 @@ enum Snapshot {
                     capture(to: "\(dir)/overview-off-\(mode).png")
                 }
             }
+            // S-107: the strategy editor's Advanced section with the remaining
+            // tpws options set. "editor-advanced" takes only this.
+            if only == nil || only?.contains("extras") == true || only?.contains("editor-advanced") == true {
+                let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    model.sidebar = .strategies
+                    model.newStrategy(from: StrategyOptions(commandLine: "--split-pos=1,midsld --disorder=tls --oob=http"
+                                                            + " --oob-data=0x01 --filter-l7=http,tls --tamper-start=n1 --tamper-cutoff=n3"),
+                                      name: "My Provider")
+                    try? await Task.sleep(for: .seconds(1))
+                    if let sheet = main?.attachedSheet { scrollToEnd(sheet.contentView) }
+                    try? await Task.sleep(for: .seconds(0.5))
+                    capture(to: "\(dir)/editor-advanced-\(mode).png", window: main?.attachedSheet)
+                    model.draft = nil
+                    try? await Task.sleep(for: .seconds(0.6))
+                }
+            }
             // S-072: the System proxy caption in PAC mode (My list). Only the
             // preference is shown on; nothing applies the system proxy here.
             if only == nil || only?.contains("overview") == true {
@@ -164,6 +182,20 @@ enum Snapshot {
             for window in NSApp.windows { if let sheet = window.attachedSheet { window.endSheet(sheet) } }
             NSApp.terminate(nil)
         }
+    }
+
+    /// Scrolls the first vertical scroll view under `view` to its end, to show
+    /// the last sections of a long sheet.
+    private static func scrollToEnd(_ view: NSView?) {
+        guard let view else { return }
+        if let scroll = view as? NSScrollView, let document = scroll.documentView,
+           document.frame.height > scroll.contentView.bounds.height {
+            let y = document.isFlipped ? document.frame.height - scroll.contentView.bounds.height : 0
+            scroll.contentView.scroll(to: NSPoint(x: 0, y: y))
+            scroll.reflectScrolledClipView(scroll.contentView)
+            return
+        }
+        for sub in view.subviews { scrollToEnd(sub) }
     }
 
     /// Captures the real window with screencapture, so glass, sidebars, and
