@@ -128,9 +128,8 @@ struct FinderSheet: View {
         let done = finder.finishedCount
         let total = finder.trials.count
         if finder.isRunning {
-            return finder.depth == .thorough
-                ? String(localized: "Try \(min(done + 1, total)) of \(total)…")
-                : String(localized: "Testing \(min(done + 1, total)) of \(total)…")
+            // Up to three tries run at once, so count the finished ones.
+            return String(localized: "\(done) of \(total) tried…")
         }
         if finder.isStopped { return String(localized: "Stopped after \(done) of \(total).") }
         guard finder.isDone else { return "" }

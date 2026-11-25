@@ -136,7 +136,7 @@ enum SelfTest {
                     try? await Task.sleep(for: .milliseconds(100))
                 }
             }
-            check("a thorough scan tries strategies one after another", model.finder.finishedCount >= 4, "\(model.finder.finishedCount) done")
+            check("a thorough scan works through its tries", model.finder.finishedCount >= 4, "\(model.finder.finishedCount) done")
             check("at least one scan try opens example.com", model.finder.workingCount > 0)
             model.finder.stop()
             check("stopping a scan stops it", !model.finder.isRunning && model.finder.trials.allSatisfy { $0.status != .testing })

@@ -126,8 +126,11 @@ final class StrategyFinder {
         do { try process.run() } catch { return allFail(String(localized: "tpws did not start")) }
         helpers.track(process, port: port)
         defer {
+            // Never wait forever for tpws to quit: a stuck one is killed.
             process.terminate()
-            process.waitUntilExit()
+            let deadline = Date.now.addingTimeInterval(1.5)
+            while process.isRunning, Date.now < deadline { usleep(20_000) }
+            if process.isRunning { kill(process.processIdentifier, SIGKILL) }
         }
         // Wait until tpws accepts connections, up to a second.
         for _ in 0..<20 {
@@ -136,7 +139,18 @@ final class StrategyFinder {
         }
         if Task.isCancelled { return nil }
         guard process.isRunning else { return allFail(String(localized: "tpws refused these flags")) }
-        let outcomes = await fetchAll(urls, socksPort: port, timeout: timeout)
+        // A hard limit on top of URLSession's own timeouts, so a row can never
+        // stay on "Testing…": whatever happens, the try ends.
+        let outcomes = await withTaskGroup(of: [SiteCheck.Outcome]?.self) { group in
+            group.addTask { await fetchAll(urls, socksPort: port, timeout: timeout) }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(timeout + 4))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first ?? urls.map { _ in SiteCheck.Outcome.failed(String(localized: "Timed out")) }
+        }
         if Task.isCancelled { return nil }
         return zip(hosts, outcomes).map { host, outcome in
             switch outcome {
