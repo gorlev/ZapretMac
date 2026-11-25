@@ -84,8 +84,10 @@ struct ZapretMacApp: App {
         }
 
         MenuBarExtra {
+            // The panel lists your own strategies, so it needs the database too.
             MenuBarContent()
                 .environment(model)
+                .modelContainer(model.container)
         } label: {
             Image(systemName: model.engine.menuBarSymbol)
                 .accessibilityLabel(model.engine.state.title)
