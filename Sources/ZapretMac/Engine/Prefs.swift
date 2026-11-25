@@ -20,6 +20,10 @@ final class Prefs {
     var testURL: String { didSet { defaults.set(testURL, forKey: "testURL") } }
     /// The sites Find a Strategy tries, one per line or separated by spaces or commas.
     var finderSites: String { didSet { defaults.set(finderSites, forKey: "finderSites") } }
+    /// The shortcut that turns the bypass on and off in any app. None until the person records one.
+    var globalShortcut: GlobalShortcut? {
+        didSet { defaults.set(globalShortcut.flatMap { try? JSONEncoder().encode($0) }, forKey: "globalShortcut") }
+    }
 
     static let defaultPort = 1088
 
@@ -45,5 +49,11 @@ final class Prefs {
         let testURL = d.string(forKey: "testURL") ?? "https://discord.com"
         self.testURL = testURL
         finderSites = d.string(forKey: "finderSites") ?? testURL
+        globalShortcut = Self.savedShortcut(in: d)
+    }
+
+    /// The shortcut as saved, read straight from the defaults.
+    static func savedShortcut(in defaults: UserDefaults) -> GlobalShortcut? {
+        defaults.data(forKey: "globalShortcut").flatMap { try? JSONDecoder().decode(GlobalShortcut.self, from: $0) }
     }
 }

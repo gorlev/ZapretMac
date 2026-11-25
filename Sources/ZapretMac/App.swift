@@ -101,6 +101,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // open one (a locked screen, restored state with no windows).
         SelfTest.runIfRequested(model: model)
         model.recoverFromCrash()
+        // Test runs never register the person's shortcut (their prefs are a test suite anyway).
+        if !Store.isOverridden { model.registerGlobalShortcut() }
         if model.prefs.startOnLaunch, !Store.isOverridden { model.turnOn() }
     }
 
@@ -108,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
     func applicationWillTerminate(_ notification: Notification) {
+        GlobalHotKey.shared.unregister()
         Self.model?.engine.stop()
         Self.model?.proxy.restoreNow()
         // The self-test's result becomes the exit code, after a normal quit.

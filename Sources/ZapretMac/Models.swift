@@ -276,6 +276,35 @@ final class AppModel {
         if engine.isOn { turnOff() } else { turnOn() }
     }
 
+    // MARK: - Global shortcut (S-073)
+
+    /// True when macOS refused the shortcut, usually because another app uses it.
+    var globalShortcutFailed = false
+
+    /// Saves a newly recorded shortcut (nil removes it) and registers it system-wide.
+    func setGlobalShortcut(_ shortcut: GlobalShortcut?) {
+        prefs.globalShortcut = shortcut
+        registerGlobalShortcut()
+    }
+
+    /// Registers the saved shortcut, or removes the registration when there is none.
+    func registerGlobalShortcut() {
+        GlobalHotKey.shared.onPress = { [weak self] in self?.globalShortcutPressed() }
+        if let shortcut = prefs.globalShortcut {
+            globalShortcutFailed = !GlobalHotKey.shared.register(shortcut)
+        } else {
+            GlobalHotKey.shared.unregister()
+            globalShortcutFailed = false
+        }
+    }
+
+    /// The global shortcut: the same switch as Command-B, plus a HUD that says which way it went.
+    func globalShortcutPressed() {
+        let wasOn = engine.isOn
+        toggle()
+        BypassHUD.shared.show(state: wasOn ? .stopped : .running)
+    }
+
     func turnOn() {
         writeLists()
         engine.start(command)
