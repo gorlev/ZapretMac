@@ -64,6 +64,17 @@ enum Snapshot {
                     try? await Task.sleep(for: .seconds(0.8))
                     capture(to: "\(dir)/finder-\(mode).png", window: main?.attachedSheet)
                 }
+                // The same sheet after a thorough scan (blockcheck's matrix).
+                if let url = URL(string: "https://example.com") {
+                    model.startFinder(url: url, depth: .thorough)
+                    for _ in 0..<900 where model.finder.isRunning { try? await Task.sleep(for: .milliseconds(100)) }
+                }
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    try? await Task.sleep(for: .seconds(0.8))
+                    capture(to: "\(dir)/finder-thorough-\(mode).png", window: main?.attachedSheet)
+                }
+                model.finderDepth = .quick
                 model.showFinder = false
                 try? await Task.sleep(for: .seconds(0.6))
                 model.turnOff()
