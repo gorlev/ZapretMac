@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import ZapretMacKit
 
-/// Runs the bundled tpws binary in SOCKS mode and collects its output.
+/// Keeps tpws running in SOCKS mode through a `TPWSRunner` and collects its output.
 @Observable
 final class Engine {
     enum State: Equatable {
@@ -21,33 +21,33 @@ final class Engine {
     private(set) var autoRestarts = 0
     /// Called once tpws has quit by itself twice within a minute.
     var onFailure: ((String) -> Void)?
-    var pid: Int32? { process?.processIdentifier }
+    var pid: Int32? { handle?.pid }
 
     var isOn: Bool { state == .running || state == .starting }
 
-    private var process: Process?
+    /// Starts and stops tpws. Local by default; the self-test passes a fake.
+    @ObservationIgnored private let runner: any TPWSRunner
+    private var handle: (any TPWSHandle)?
     private var nextID = 0
     /// Bumped on every start and stop, so output and exits from an old
     /// process never change the state of a new one.
     private var generation = 0
     private var lastCommand: TPWSCommand?
-    private var recentCrashes: [Date] = []
+    private var restarts = TPWSRestartPolicy()
     static let maxLines = 4000
 
-    /// Contents/Helpers/tpws inside the app. TPWS_PATH overrides it.
-    nonisolated static var binaryURL: URL {
-        if let path = ProcessInfo.processInfo.environment["TPWS_PATH"], !path.isEmpty {
-            return URL(fileURLWithPath: path)
-        }
-        return Bundle.main.bundleURL.appending(path: "Contents/Helpers/tpws")
+    init(runner: any TPWSRunner = LocalTPWSRunner()) {
+        self.runner = runner
     }
 
-    static var binaryExists: Bool { FileManager.default.isExecutableFile(atPath: binaryURL.path) }
+    /// Contents/Helpers/tpws inside the app. TPWS_PATH overrides it.
+    nonisolated static var binaryURL: URL { LocalTPWSRunner.binaryURL }
+
+    static var binaryExists: Bool { LocalTPWSRunner().isAvailable }
 
     func start(_ command: TPWSCommand) {
         stop()
-        if let pidFile = command.pidFile { Self.stopLeftover(pidFile: pidFile) }
-        guard Self.binaryExists else {
+        guard runner.isAvailable else {
             state = .failed(String(localized: "tpws is missing from the app. Rebuild it with ./build.sh."))
             return
         }
@@ -55,77 +55,50 @@ final class Engine {
         let gen = generation
         lastCommand = command
         connections = 0
-        commandLine = command.commandLine(binary: Self.binaryURL.path)
+        commandLine = command.commandLine(binary: runner.binaryPath)
         append(["$ " + commandLine])
 
-        let process = Process()
-        process.executableURL = Self.binaryURL
-        process.arguments = command.arguments
-        let pipe = Pipe()
-        process.standardOutput = pipe
-        process.standardError = pipe
-        let reader = LineReader { [weak self] text in
-            Task { @MainActor in self?.receive(text, generation: gen) }
-        }
-        pipe.fileHandleForReading.readabilityHandler = { handle in
-            let data = handle.availableData
-            if data.isEmpty { handle.readabilityHandler = nil } else { reader.feed(data) }
-        }
-        process.terminationHandler = { [weak self] proc in
-            let code = proc.terminationStatus
-            Task { @MainActor in self?.ended(code: code, generation: gen) }
-        }
+        let handle: any TPWSHandle
         do {
-            try process.run()
+            handle = try runner.start(command, output: { [weak self] text in
+                Task { @MainActor in self?.receive(text, generation: gen) }
+            }, exit: { [weak self] code in
+                Task { @MainActor in self?.ended(code: code, generation: gen) }
+            })
         } catch {
             state = .failed(String(localized: "Could not start tpws: \(error.localizedDescription)"))
             return
         }
-        self.process = process
+        self.handle = handle
         state = .starting
         // Running means the port takes connections, not just that tpws started:
         // a site check right after turning on must not race the bind.
         let port = command.port
+        let plan = TPWSReadinessPlan.engine
+        let runner = runner
         Task {
-            for _ in 0..<60 {
-                guard generation == gen, state == .starting, process.isRunning else { return }
-                if await Task.detached(operation: { StrategyFinder.isListening(port) }).value {
+            for _ in 0..<plan.attempts {
+                guard generation == gen, state == .starting, handle.isRunning else { return }
+                if await runner.isReady(port: port) {
                     markRunning()
                     return
                 }
-                try? await Task.sleep(for: .milliseconds(50))
+                try? await Task.sleep(for: plan.interval)
             }
         }
     }
 
     func stop() {
         generation += 1
-        if let process, process.isRunning {
-            process.terminate()
-            // tpws quits at once on SIGTERM; wait briefly so the port is free
+        if let handle, handle.isRunning {
+            // tpws quits at once on SIGTERM; the bounded wait frees the port
             // for a restart.
-            let deadline = Date.now.addingTimeInterval(1.5)
-            while process.isRunning, Date.now < deadline { usleep(20_000) }
-            if process.isRunning { kill(process.processIdentifier, SIGKILL) }
+            handle.stop()
             append(["tpws stopped"])
         }
-        process = nil
+        handle = nil
         startedAt = nil
         state = .stopped
-    }
-
-    /// A tpws from an earlier run that was force-quit keeps the port busy.
-    /// Its pid file names it; stop it if that process is still our tpws.
-    static func stopLeftover(pidFile: String) {
-        guard let text = try? String(contentsOfFile: pidFile, encoding: .utf8),
-              let pid = Int32(text.trimmingCharacters(in: .whitespacesAndNewlines)), pid > 1 else { return }
-        var path = [CChar](repeating: 0, count: 4096)
-        guard proc_pidpath(pid, &path, UInt32(path.count)) > 0,
-              String(decoding: path.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self) == binaryURL.path else { return }
-        kill(pid, SIGTERM)
-        for _ in 0..<50 where kill(pid, 0) == 0 { usleep(20_000) }
-        if kill(pid, 0) == 0 { kill(pid, SIGKILL) }
-        try? FileManager.default.removeItem(atPath: pidFile)
     }
 
     func clearLog() {
@@ -160,14 +133,12 @@ final class Engine {
 
     private func ended(code: Int32, generation gen: Int) {
         guard gen == generation else { return }
-        process = nil
+        handle = nil
         startedAt = nil
         let lastError = lines.last(where: { $0.kind == .error })?.text
         let reason = lastError ?? String(localized: "tpws quit with code \(Int(code)).")
         // Restart once; a second exit within a minute is a real failure.
-        recentCrashes = recentCrashes.filter { $0 > Date.now.addingTimeInterval(-60) }
-        if recentCrashes.isEmpty, let lastCommand {
-            recentCrashes.append(.now)
+        if let lastCommand, restarts.shouldRestart() {
             autoRestarts += 1
             append(["tpws quit by itself (\(reason)). Restarting it."])
             start(lastCommand)
@@ -190,40 +161,6 @@ final class Engine {
     }
 
     nonisolated private static func run(_ arguments: [String]) async -> (ok: Bool, output: String) {
-        await Task.detached {
-            let process = Process()
-            process.executableURL = binaryURL
-            process.arguments = arguments
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            process.standardError = pipe
-            do { try process.run() } catch { return (false, error.localizedDescription) }
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            process.waitUntilExit()
-            return (process.terminationStatus == 0, String(decoding: data, as: UTF8.self))
-        }.value
-    }
-}
-
-/// Collects bytes from a pipe and hands out whole lines.
-nonisolated final class LineReader: @unchecked Sendable {
-    private var buffer = Data()
-    private let lock = NSLock()
-    private let emit: @Sendable ([String]) -> Void
-
-    init(emit: @escaping @Sendable ([String]) -> Void) {
-        self.emit = emit
-    }
-
-    func feed(_ data: Data) {
-        lock.lock()
-        buffer.append(data)
-        var out: [String] = []
-        while let newline = buffer.firstIndex(of: 10) {
-            out.append(String(decoding: buffer[buffer.startIndex..<newline], as: UTF8.self))
-            buffer.removeSubrange(buffer.startIndex...newline)
-        }
-        lock.unlock()
-        if !out.isEmpty { emit(out) }
+        await LocalTPWSRunner().run(arguments)
     }
 }
