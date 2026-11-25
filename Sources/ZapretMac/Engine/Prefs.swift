@@ -19,6 +19,8 @@ final class Prefs {
     var verboseLog: Bool { didSet { defaults.set(verboseLog, forKey: "verboseLog") } }
     /// S-081: tpws runs as root in the helper with pf rules, and no proxy setting is used.
     var transparentMode: Bool { didSet { defaults.set(transparentMode, forKey: "transparentMode") } }
+    /// S-104: tpws also listens on the LAN address, so other devices can use it.
+    var shareOnNetwork: Bool { didSet { defaults.set(shareOnNetwork, forKey: "shareOnNetwork") } }
     var testURL: String { didSet { defaults.set(testURL, forKey: "testURL") } }
     /// The sites Find a Strategy tries, one per line or separated by spaces or commas.
     var finderSites: String { didSet { defaults.set(finderSites, forKey: "finderSites") } }
@@ -49,6 +51,7 @@ final class Prefs {
         startOnLaunch = d.bool(forKey: "startOnLaunch")
         verboseLog = (d.object(forKey: "verboseLog") as? Bool) ?? true
         transparentMode = d.bool(forKey: "transparentMode")
+        shareOnNetwork = d.bool(forKey: "shareOnNetwork")
         let testURL = d.string(forKey: "testURL") ?? "https://discord.com"
         self.testURL = testURL
         finderSites = d.string(forKey: "finderSites") ?? testURL
