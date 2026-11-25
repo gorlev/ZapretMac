@@ -369,12 +369,108 @@ enum SelfTest {
             check("the app reports the helper's state without installing it",
                   [.notInstalled, .needsApproval, .ready, .notFound].contains(HelperClient.shared.state))
 
+            // S-081 S-082
+            // Transparent mode with a fake helper: it checks the arguments with
+            // the helper's rules and runs tpws as the user in SOCKS mode. Nothing
+            // runs as root, pf is never touched, and the system proxy stays off.
+            await checkTransparentMode(model: model)
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 
             print(failures == 0 ? "SELFTEST PASS \(count) checks" : "SELFTEST FAIL \(failures) of \(count) checks")
             finish(code: failures == 0 ? 0 : 1)
         }
+    }
+
+    /// S-081 S-082 on a `FakeHelperClient`.
+    private static func checkTransparentMode(model: AppModel) async {
+        let fake = FakeHelperClient()
+        let helper = HelperClient.shared
+        @MainActor func waitRunning() async {
+            for _ in 0..<80 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+        }
+        func usesHelper() -> Bool { model.engine.runner is HelperTPWSRunner }
+        let folders = HelperArguments.allowedFolders(home: NSHomeDirectory())
+
+        helper.useFake(fake, state: .notInstalled)
+        check("Transparent mode does not turn on without the helper",
+              !model.setTransparentMode(true) && !model.prefs.transparentMode && !usesHelper())
+
+        // Launch: a ready helper is asked to clean up while the bypass is off.
+        model.turnOff()
+        await model.cleanUpHelperAtLaunch()
+        check("launch does not call a helper that is not installed", fake.count("cleanUp") == 0, "\(fake.calls)")
+        helper.setTestState(.ready)
+        await model.cleanUpHelperAtLaunch()
+        check("launch asks a ready helper to clean up", fake.count("cleanUp") == 1, "\(fake.calls)")
+
+        // Turning on in Transparent mode goes through the helper.
+        check("turning Transparent mode on works with the helper ready", model.setTransparentMode(true) && usesHelper())
+        model.turnOn()
+        await waitRunning()
+        let sent = fake.startedArguments.last ?? []
+        check("turning on in Transparent mode calls startTransparent", fake.count("start") == 1 && model.engine.state == .running,
+              "\(model.engine.state), \(fake.calls)")
+        check("the helper gets only arguments it accepts", !sent.isEmpty
+              && HelperArguments.problem(in: sent, allowedFolders: folders) == nil
+              && !sent.contains { $0.hasPrefix("--socks") || $0.hasPrefix("--port") || $0.hasPrefix("--pidfile") || $0.hasPrefix("--bind") },
+              "\(sent)")
+        check("the command line shows what the helper adds", model.engine.commandLine.contains("--user=root --port=\(model.prefs.port)"),
+              model.engine.commandLine)
+        check("the log says tpws output is not shown", model.engine.lines.contains { $0.text.hasPrefix("Transparent mode:") })
+        check("Transparent mode never applies the system proxy", !model.proxy.isApplied && !model.pacServer.isRunning)
+        try? await Task.sleep(for: .seconds(1))
+        check("the pid comes from the helper's status", model.engine.pid != nil && fake.count("status") > 0, "\(fake.calls)")
+
+        // A strategy change restarts through the helper.
+        let strategy = model.prefs.strategyID
+        let other = Preset.all.first { "preset:\($0.id)" != strategy }.map { "preset:\($0.id)" } ?? strategy
+        model.choose(strategy: other)
+        await waitRunning()
+        check("a strategy change restarts through the helper",
+              fake.count("start") == 2 && fake.count("stop") == 1 && model.engine.state == .running && usesHelper(),
+              "\(model.engine.state), \(fake.calls)")
+        model.choose(strategy: strategy)
+        await waitRunning()
+
+        // Switching the toggle while running restarts with the other runner.
+        let stopsBefore = fake.count("stop")
+        model.setTransparentMode(false)
+        await waitRunning()
+        check("turning Transparent mode off while on restarts tpws locally",
+              !usesHelper() && model.engine.state == .running && !fake.isRunning && fake.count("stop") == stopsBefore + 1
+              && model.command.arguments.first == "--socks", "\(model.engine.state), \(fake.calls)")
+        let startsBefore = fake.count("start")
+        model.setTransparentMode(true)
+        await waitRunning()
+        check("turning Transparent mode on while on restarts tpws through the helper",
+              usesHelper() && model.engine.state == .running && fake.isRunning && fake.count("start") == startsBefore + 1,
+              "\(model.engine.state), \(fake.calls)")
+
+        // Turning off reaches the helper.
+        let stopsBeforeOff = fake.count("stop")
+        model.turnOff()
+        check("turning off in Transparent mode stops tpws in the helper", fake.count("stop") == stopsBeforeOff + 1 && !fake.isRunning,
+              "\(fake.calls)")
+
+        // S-082: the helper is removed while on: back to the local SOCKS proxy.
+        model.turnOn()
+        await waitRunning()
+        fake.remove()
+        helper.setTestState(.notInstalled)
+        try? await Task.sleep(for: .milliseconds(300))
+        model.checkHelper()
+        await waitRunning()
+        check("a removed helper turns Transparent mode off", !model.prefs.transparentMode && model.transparentNotice != nil)
+        check("the bypass runs locally again after the helper is gone",
+              !usesHelper() && model.engine.state == .running && model.command.arguments.first == "--socks",
+              "\(model.engine.state)")
+        check("the local tpws takes connections", LocalTPWSRunner.isListening(model.prefs.port))
+        model.turnOff()
+        check("the notice shows once", model.transparentNotice == nil)
+        model.turnOn()
+        await waitRunning()
     }
 
     /// Runs an engine on a `FakeTPWSRunner` through start, output, a crash and

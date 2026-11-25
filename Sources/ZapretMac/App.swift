@@ -60,6 +60,7 @@ struct ZapretMacApp: App {
                 Toggle("Use as System Proxy", isOn: Binding(
                     get: { model.prefs.useSystemProxy },
                     set: { model.prefs.useSystemProxy = $0; model.systemProxyChanged() }))
+                    .disabled(model.prefs.transparentMode)
                 Divider()
                 Button("Copy tpws Command") {
                     NSPasteboard.general.clearContents()
@@ -108,7 +109,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Test runs never register the person's shortcut (their prefs are a test suite anyway).
         if !Store.isOverridden { model.registerGlobalShortcut() }
         model.startSubscriptionSchedule()
-        if model.prefs.startOnLaunch, !Store.isOverridden { model.turnOn() }
+        model.startHelperWatch()
+        Task {
+            // S-082: no ZapretMac pf rules stay from a force-quit, and Transparent
+            // mode falls back to SOCKS when the helper is gone. Then turn on.
+            await model.cleanUpHelperAtLaunch()
+            model.checkHelper()
+            if model.prefs.startOnLaunch, !Store.isOverridden { model.turnOn() }
+        }
     }
 
     /// The menu bar item keeps the app, and the bypass, running.
@@ -116,6 +124,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         GlobalHotKey.shared.unregister()
+        // In Transparent mode this waits (at most a few seconds) for the helper
+        // to remove the pf rules and stop tpws before the app exits.
         Self.model?.engine.stop()
         Self.model?.proxy.restoreNow()
         // The self-test's result becomes the exit code, after a normal quit.

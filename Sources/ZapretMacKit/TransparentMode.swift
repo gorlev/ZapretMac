@@ -20,6 +20,11 @@ public enum HelperInfo {
     /// macOS's own pf.conf loads `rdr-anchor "com.apple/*"` and `anchor "com.apple/*"`,
     /// so a sub-anchor there needs no change to /etc/pf.conf.
     public static let anchor = "com.apple/zapretmac"
+
+    /// What the helper always puts before the app's tpws arguments.
+    public static func fixedTPWSArguments(port: Int) -> [String] {
+        ["--user=root", "--port=\(port)", "--bind-addr=127.0.0.1"]
+    }
 }
 
 /// The pf anchor text for transparent mode, after zapret's macOS setup:

@@ -125,6 +125,22 @@ enum Snapshot {
                 model.prefs.useSystemProxy = false
                 model.prefs.scope = scope
             }
+            // S-081: a fake helper shows as ready (nothing is installed or run as
+            // root); Overview in Transparent mode, and Settings > Advanced with it on.
+            if only == nil || only?.contains("overview") == true || only?.contains("settings") == true {
+                HelperClient.shared.useFake(FakeHelperClient(), state: .ready)
+                model.setTransparentMode(true)
+                if !model.engine.isOn { model.turnOn() }
+                for _ in 0..<50 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+            }
+            if only == nil || only?.contains("overview") == true {
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    model.sidebar = .overview
+                    try? await Task.sleep(for: .seconds(0.8))
+                    capture(to: "\(dir)/overview-transparent-\(mode).png")
+                }
+            }
             if only == nil || only?.contains("settings") == true {
                 let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
                 // A sample shortcut in the test suite, shown but never registered.

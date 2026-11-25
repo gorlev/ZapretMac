@@ -101,6 +101,7 @@ struct GeneralSettings: View {
             }
             Toggle("Use as system proxy", isOn: Binding(get: { prefs.useSystemProxy },
                                                         set: { prefs.useSystemProxy = $0; model.systemProxyChanged() }))
+                .disabled(prefs.transparentMode)
         } header: {
             Text("Proxy")
         } footer: {
@@ -142,13 +143,18 @@ struct GeneralSettings: View {
 }
 
 /// Transparent mode's helper (S-080): what it does, its state, and the
-/// buttons that install, approve, and remove it. The mode switch comes later.
+/// buttons that install, approve, and remove it, and the mode switch (S-081).
 struct AdvancedSettings: View {
+    @Environment(AppModel.self) private var model
     @State private var helper = HelperClient.shared
     @State private var confirmRemove = false
 
     var body: some View {
         Section {
+            Toggle("Use Transparent mode", isOn: Binding(get: { model.prefs.transparentMode },
+                                                         set: { model.setTransparentMode($0) }))
+                // Turning it off always works; turning it on needs the helper.
+                .disabled(helper.state != .ready && !model.prefs.transparentMode)
             LabeledContent("Helper") {
                 Label(helper.stateTitle, systemImage: symbol)
                     .foregroundStyle(helper.state == .ready ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
@@ -168,6 +174,10 @@ struct AdvancedSettings: View {
             VStack(alignment: .leading, spacing: Space.xs) {
                 Text("Sends every app's web traffic through tpws with no proxy setting. It needs a helper that runs as administrator.")
                     .foregroundStyle(.secondary)
+                if helper.state != .ready, !helper.isRegistered {
+                    Text("Install the helper to use Transparent mode.")
+                        .foregroundStyle(.secondary)
+                }
                 if helper.state == .needsApproval {
                     Text("Turn on ZapretMac in System Settings, under General, Login Items & Extensions.")
                         .foregroundStyle(.secondary)
@@ -186,6 +196,7 @@ struct AdvancedSettings: View {
             // Approval happens in System Settings, which never calls back: look again every 2 seconds.
             while !Task.isCancelled {
                 helper.refresh()
+                model.checkHelper()
                 if helper.state == .ready, helper.helperVersion == nil, !Store.isOverridden { await helper.checkVersion() }
                 try? await Task.sleep(for: .seconds(2))
             }

@@ -17,6 +17,8 @@ final class Prefs {
     var useSystemProxy: Bool { didSet { defaults.set(useSystemProxy, forKey: "systemProxy") } }
     var startOnLaunch: Bool { didSet { defaults.set(startOnLaunch, forKey: "startOnLaunch") } }
     var verboseLog: Bool { didSet { defaults.set(verboseLog, forKey: "verboseLog") } }
+    /// S-081: tpws runs as root in the helper with pf rules, and no proxy setting is used.
+    var transparentMode: Bool { didSet { defaults.set(transparentMode, forKey: "transparentMode") } }
     var testURL: String { didSet { defaults.set(testURL, forKey: "testURL") } }
     /// The sites Find a Strategy tries, one per line or separated by spaces or commas.
     var finderSites: String { didSet { defaults.set(finderSites, forKey: "finderSites") } }
@@ -46,6 +48,7 @@ final class Prefs {
         useSystemProxy = (d.object(forKey: "systemProxy") as? Bool) ?? !Store.isOverridden
         startOnLaunch = d.bool(forKey: "startOnLaunch")
         verboseLog = (d.object(forKey: "verboseLog") as? Bool) ?? true
+        transparentMode = d.bool(forKey: "transparentMode")
         let testURL = d.string(forKey: "testURL") ?? "https://discord.com"
         self.testURL = testURL
         finderSites = d.string(forKey: "finderSites") ?? testURL
