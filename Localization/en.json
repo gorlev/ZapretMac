@@ -14,67 +14,77 @@
     "where": "Sources/ZapretMac/App.swift:45",
     "line": "Button(\"Add Sites…\") { model.requestAddSites() }"
   },
+  "Add Subscription…": {
+    "en": "Add Subscription…",
+    "where": "Sources/ZapretMac/App.swift:47",
+    "line": "Button(\"Add Subscription…\") { model.requestAddSubscription() }"
+  },
+  "Update All Subscriptions": {
+    "en": "Update All Subscriptions",
+    "where": "Sources/ZapretMac/App.swift:49",
+    "line": "Button(\"Update All Subscriptions\") { model.updateAllSubscriptions() }"
+  },
   "Bypass": {
     "en": "Bypass",
-    "where": "Sources/ZapretMac/App.swift:48",
+    "where": "Sources/ZapretMac/App.swift:52",
     "line": "CommandMenu(\"Bypass\") {",
     "note": "Menu bar menu title (top of the screen) for the on/off commands. One short word."
   },
   "Turn Off": {
     "en": "Turn Off",
-    "where": "Sources/ZapretMac/App.swift:49",
+    "where": "Sources/ZapretMac/App.swift:53",
     "line": "Button(model.engine.isOn ? String(localized: \"Turn Off\") : String(localized: \"Turn On\")) { model.toggle() }"
   },
   "Turn On": {
     "en": "Turn On",
-    "where": "Sources/ZapretMac/App.swift:49",
+    "where": "Sources/ZapretMac/App.swift:53",
     "line": "Button(model.engine.isOn ? String(localized: \"Turn Off\") : String(localized: \"Turn On\")) { model.toggle() }"
   },
   "Check Site": {
     "en": "Check Site",
-    "where": "Sources/ZapretMac/App.swift:51",
+    "where": "Sources/ZapretMac/App.swift:55",
     "line": "Button(\"Check Site\") { model.runCheck() }"
   },
   "Find a Strategy…": {
     "en": "Find a Strategy…",
-    "where": "Sources/ZapretMac/App.swift:53",
+    "where": "Sources/ZapretMac/App.swift:57",
     "line": "Button(\"Find a Strategy…\") { model.openFinder() }"
   },
   "Use as System Proxy": {
     "en": "Use as System Proxy",
-    "where": "Sources/ZapretMac/App.swift:56",
+    "where": "Sources/ZapretMac/App.swift:60",
     "line": "Toggle(\"Use as System Proxy\", isOn: Binding("
   },
   "Copy tpws Command": {
     "en": "Copy tpws Command",
-    "where": "Sources/ZapretMac/App.swift:60",
+    "where": "Sources/ZapretMac/App.swift:64",
     "line": "Button(\"Copy tpws Command\") {"
   },
   "Off": {
     "en": "Off",
-    "where": "Sources/ZapretMac/ContentView.swift:113",
+    "where": "Sources/ZapretMac/ContentView.swift:121",
     "line": "case .stopped: String(localized: \"Off\")",
     "note": "Status shown in the sidebar footer and menu bar menu: the bypass is not running."
   },
   "Starting…": {
     "en": "Starting…",
-    "where": "Sources/ZapretMac/ContentView.swift:114",
+    "where": "Sources/ZapretMac/ContentView.swift:122",
     "line": "case .starting: String(localized: \"Starting…\")"
   },
   "Bypass On": {
     "en": "Bypass On",
-    "where": "Sources/ZapretMac/ContentView.swift:115",
+    "where": "Sources/ZapretMac/ContentView.swift:123",
     "line": "case .running: String(localized: \"Bypass On\")",
     "note": "Status shown in the sidebar footer and menu bar menu: the bypass is running."
   },
   "Stopped with an Error": {
     "en": "Stopped with an Error",
-    "where": "Sources/ZapretMac/ContentView.swift:116",
+    "where": "Sources/ZapretMac/ContentView.swift:124",
     "line": "case .failed: String(localized: \"Stopped with an Error\")"
   },
   "Not running": {
     "en": "Not running",
-    "where": "Sources/ZapretMac/ContentView.swift:73",
+    "where": "Sources/ZapretMac/ContentView.swift:78",
     "line": "Text(model.engine.isOn ? \"127.0.0.1:\\(String(model.prefs.port))\" : String(localized: \"Not running\"))"
   },
   "tpws quit with code %lld.": {
@@ -139,17 +149,17 @@
   },
   "Cancelled.": {
     "en": "Cancelled.",
-    "where": "Sources/ZapretMac/Engine/SystemProxy.swift:130",
+    "where": "Sources/ZapretMac/Engine/SystemProxy.swift:127",
     "line": "return result.output.contains(\"-128\") ? String(localized: \"Cancelled.\") : String(localized: \"Could not change the proxy: \\(result.output.trimmingCharacters(in: "
   },
   "Could not change the proxy: %@": {
     "en": "Could not change the proxy: %@",
-    "where": "Sources/ZapretMac/Engine/SystemProxy.swift:130",
+    "where": "Sources/ZapretMac/Engine/SystemProxy.swift:127",
     "line": "return result.output.contains(\"-128\") ? String(localized: \"Cancelled.\") : String(localized: \"Could not change the proxy: \\(result.output.trimmingCharacters(in: "
   },
   "No active network service found.": {
     "en": "No active network service found.",
-    "where": "Sources/ZapretMac/Engine/SystemProxy.swift:40",
+    "where": "Sources/ZapretMac/Engine/SystemProxy.swift:46",
     "line": "lastError = String(localized: \"No active network service found.\")"
   },
   "Strategy": {
@@ -162,12 +172,6 @@
     "where": "Sources/ZapretMac/MenuBarContent.swift:27",
     "line": "Text(\"All Sites\").tag(Scope.allSites)",
     "note": "Menu bar picker item, same meaning as 'All sites'."
-  },
-  "My List": {
-    "en": "My List",
-    "where": "Sources/ZapretMac/MenuBarContent.swift:28",
-    "line": "Text(\"My List\").tag(Scope.listOnly)",
-    "note": "Menu bar picker item, same meaning as 'My list'."
   },
   "Open ZapretMac": {
     "en": "Open ZapretMac",
@@ -186,7 +190,7 @@
   },
   "ZapretMac stopped": {
     "en": "ZapretMac stopped",
-    "where": "Sources/ZapretMac/Models.swift:116",
+    "where": "Sources/ZapretMac/Models.swift:125",
     "line": "if !Store.isOverridden { Notifier.post(title: String(localized: \"ZapretMac stopped\"), body: reason) }"
   },
   "Add %lld Sites": {
@@ -194,7 +198,7 @@
       "one": "Add Site",
       "other": "Add Sites"
     },
-    "where": "Sources/ZapretMac/Models.swift:236",
+    "where": "Sources/ZapretMac/Models.swift:245",
     "line": "undoName(String(localized: \"Add \\(added) Sites\"))",
     "note": "Undo menu action name: Edit menu shows 'Undo <this>'. The number is never shown; forms only pick singular/plural."
   },
@@ -203,54 +207,165 @@
       "one": "Delete Site",
       "other": "Delete Sites"
     },
-    "where": "Sources/ZapretMac/Models.swift:245",
+    "where": "Sources/ZapretMac/Models.swift:254",
     "line": "undoName(String(localized: \"Delete \\(entries.count) Sites\"))",
     "note": "Undo menu action name: Edit menu shows 'Undo <this>'. The number is never shown; forms only pick singular/plural."
   },
   "%@ strategy": {
     "en": "%@ strategy",
-    "where": "Sources/ZapretMac/Models.swift:410",
+    "where": "Sources/ZapretMac/Models.swift:512",
     "line": "let name = trial.name.isEmpty ? String(localized: \"\\(finder.site) strategy\") : trial.name",
     "note": "Suggested name for a strategy saved from a scan; %@ is a site, e.g. discord.com."
   },
+  "Address": {
+    "en": "Address",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:22",
+    "line": "TextField(\"Address\", text: $address, prompt: Text(verbatim: \"https://example.com/list.txt\"))",
+    "note": "Text field label for a website address."
+  },
+  "Name": {
+    "en": "Name",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:25",
+    "line": "TextField(\"Name\", text: $name,"
+  },
+  "From the address": {
+    "en": "From the address",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:26",
+    "line": "prompt: Text(url.map(SiteListSubscription.defaultName) ?? String(localized: \"From the address\")))",
+    "note": "Placeholder of the optional Name field: if empty, the name is taken from the address."
+  },
+  "Add to": {
+    "en": "Add to",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:27",
+    "line": "Picker(\"Add to\", selection: $excluded) {",
+    "note": "Picker label in the Add Subscription sheet: which list the subscription goes to (Sites to Unblock / Never Touch)."
+  },
+  "Sites to Unblock": {
+    "en": "Sites to Unblock",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:28",
+    "line": "Text(\"Sites to Unblock\").tag(false)",
+    "note": "Name of the list of sites the bypass should open. Short segmented-control label."
+  },
+  "Never Touch": {
+    "en": "Never Touch",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:29",
+    "line": "Text(\"Never Touch\").tag(true)",
+    "note": "Name of the list of sites the bypass must never change (banks etc.). Short segmented-control label."
+  },
+  "A text file with one domain per line, like zapret's lists. Lines starting with # are skipped, and gzip files work. ZapretMac downloads it again every day.": {
+    "en": "A text file with one domain per line, like zapret's lists. Lines starting with # are skipped, and gzip files work. ZapretMac downloads it again every day.",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:32",
+    "line": "Text(\"A text file with one domain per line, like zapret's lists. Lines starting with # are skipped, and gzip files work. ZapretMac downloads it again every day."
+  },
+  "Enter an address that starts with https://": {
+    "en": "Enter an address that starts with https://",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:37",
+    "line": "Label(\"Enter an address that starts with https://\", systemImage: \"exclamationmark.circle\")"
+  },
+  "Downloading…": {
+    "en": "Downloading…",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:51",
+    "line": "Text(\"Downloading…\").foregroundStyle(.secondary)"
+  },
+  "Cancel": {
+    "en": "Cancel",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:54",
+    "line": "Button(\"Cancel\", role: .cancel) { dismiss() }"
+  },
+  "Subscribe": {
+    "en": "Subscribe",
+    "where": "Sources/ZapretMac/Pages/AddSubscriptionSheet.swift:56",
+    "line": "Button(\"Subscribe\", action: add)",
+    "note": "Default button of the Add Subscription sheet."
+  },
+  "Import": {
+    "en": "Import",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:107",
+    "line": "Button(\"Import\", systemImage: \"square.and.arrow.down\") { importing = true }"
+  },
+  "Add every domain in a text file, one per line": {
+    "en": "Add every domain in a text file, one per line",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:108",
+    "line": ".help(\"Add every domain in a text file, one per line\")"
+  },
+  "Add Subscription": {
+    "en": "Add Subscription",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:111",
+    "line": "Button(\"Add Subscription\", systemImage: \"link.badge.plus\") { model.requestAddSubscription(excluded: showExcluded) }"
+  },
+  "Subscribe to a site list on the web; it updates every day (Option-Command-N)": {
+    "en": "Subscribe to a site list on the web; it updates every day (Option-Command-N)",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:112",
+    "line": ".help(\"Subscribe to a site list on the web; it updates every day (Option-Command-N)\")"
+  },
+  "Add Sites": {
+    "en": "Add Sites",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:115",
+    "line": "Button(\"Add Sites\", systemImage: \"plus\") { inputFocused = true }"
+  },
+  "Type or paste sites to add (Shift-Command-N)": {
+    "en": "Type or paste sites to add (Shift-Command-N)",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:116",
+    "line": ".help(\"Type or paste sites to add (Shift-Command-N)\")"
+  },
+  "Delete the selected sites. Undo with Command-Z (Delete)": {
+    "en": "Delete the selected sites. Undo with Command-Z (Delete)",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:121",
+    "line": ".help(\"Delete the selected sites. Undo with Command-Z (Delete)\")"
+  },
+  "Update Now": {
+    "en": "Update Now",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:126",
+    "line": "Button(\"Update Now\") { Task { await model.updateSubscription(subscription) } }"
+  },
+  "Copy Address": {
+    "en": "Copy Address",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:131",
+    "line": "Button(\"Copy Address\") {"
+  },
+  "Delete": {
+    "en": "Delete",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:136",
+    "line": "Button(\"Delete\", role: .destructive) {"
+  },
   "Add sites": {
     "en": "Add sites",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:100",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:152",
     "line": "TextField(\"Add sites\", text: $input,"
   },
   "Add a site never to touch, like mybank.com": {
     "en": "Add a site never to touch, like mybank.com",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:101",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:153",
     "line": "prompt: Text(showExcluded ? String(localized: \"Add a site never to touch, like mybank.com\") : String(localized: \"Add sites, like youtube.com discord.com\")))"
   },
   "Add sites, like youtube.com discord.com": {
     "en": "Add sites, like youtube.com discord.com",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:101",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:153",
     "line": "prompt: Text(showExcluded ? String(localized: \"Add a site never to touch, like mybank.com\") : String(localized: \"Add sites, like youtube.com discord.com\")))"
   },
   "Add": {
     "en": "Add",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:105",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:157",
     "line": "Button(\"Add\", action: add)"
   },
   "Sites here always go straight through, whatever the strategy.": {
     "en": "Sites here always go straight through, whatever the strategy.",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:113",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:165",
     "line": "Text(\"Sites here always go straight through, whatever the strategy.\")"
   },
   "The bypass is on for all sites now. This list is used when Sites is set to My list.": {
     "en": "The bypass is on for all sites now. This list is used when Sites is set to My list.",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:116",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:168",
     "line": "Text(\"The bypass is on for all sites now. This list is used when Sites is set to My list.\")"
   },
   "Use My List": {
     "en": "Use My List",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:118",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:170",
     "line": "Button(\"Use My List\") { model.prefs.scope = .listOnly; model.restartIfRunning() }"
   },
   "Only these sites go through the bypass. Subdomains are included.": {
     "en": "Only these sites go through the bypass. Subdomains are included.",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:121",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:173",
     "line": "Text(\"Only these sites go through the bypass. Subdomains are included.\")"
   },
   "%lld sites": {
@@ -258,43 +373,61 @@
       "one": "1 site",
       "other": "%lld sites"
     },
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:125",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:177",
     "line": "Text(\"\\(entries.count) sites\")"
   },
   "That does not look like a site address.": {
     "en": "That does not look like a site address.",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:139",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:191",
     "line": "if parsed == 0 { note = String(localized: \"That does not look like a site address.\"); return }"
   },
   "Already in the list.": {
     "en": "Already in the list.",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:140",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:192",
     "line": "note = count == 0 ? String(localized: \"Already in the list.\") : String(localized: \"Added \\(count) sites.\")"
   },
   "On: tpws uses this site": {
     "en": "On: tpws uses this site",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:163",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:215",
     "line": ".help(entry.isEnabled ? String(localized: \"On: tpws uses this site\") : String(localized: \"Off: kept in the list but not used\"))"
   },
   "Off: kept in the list but not used": {
     "en": "Off: kept in the list but not used",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:163",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:215",
     "line": ".help(entry.isEnabled ? String(localized: \"On: tpws uses this site\") : String(localized: \"Off: kept in the list but not used\"))"
   },
-  "Move to Sites to Unblock": {
-    "en": "Move to Sites to Unblock",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:32",
-    "line": "Button(showExcluded ? String(localized: \"Move to Sites to Unblock\") : String(localized: \"Move to Never Touch\")) {"
+  "On: tpws uses the sites in this list": {
+    "en": "On: tpws uses the sites in this list",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:241",
+    "line": ".help(subscription.isEnabled ? String(localized: \"On: tpws uses the sites in this list\") : String(localized: \"Off: kept but not used\"))"
   },
-  "Move to Never Touch": {
-    "en": "Move to Never Touch",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:32",
-    "line": "Button(showExcluded ? String(localized: \"Move to Sites to Unblock\") : String(localized: \"Move to Never Touch\")) {"
+  "Off: kept but not used": {
+    "en": "Off: kept but not used",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:241",
+    "line": ".help(subscription.isEnabled ? String(localized: \"On: tpws uses the sites in this list\") : String(localized: \"Off: kept but not used\"))"
   },
-  "Delete": {
-    "en": "Delete",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:37",
-    "line": "Button(\"Delete\", role: .destructive) { delete(contextFor: entry) }"
+  "Download this list again": {
+    "en": "Download this list again",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:263",
+    "line": ".help(\"Download this list again\")"
+  },
+  "Subscriptions": {
+    "en": "Subscriptions",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:27",
+    "line": "Section(\"Subscriptions\") {",
+    "note": "Section title on the Sites page: lists downloaded from the web."
+  },
+  "Updated %@": {
+    "en": "Updated %@",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:280",
+    "line": "Text(\"Updated \\(Text(date, format: .relative(presentation: .named)))\")",
+    "note": "Row caption of a subscribed list; %@ is a relative time already in the user's language, e.g. '2 hours ago' / 'vor 2 Stunden'. Write it so that phrase fits."
+  },
+  "My List": {
+    "en": "My List",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:38",
+    "line": "if !subscriptions.isEmpty { Text(\"My List\") }",
+    "note": "Menu bar picker item, same meaning as 'My list'."
   },
   "Nothing Excluded": {
     "en": "Nothing Excluded",
@@ -316,109 +449,82 @@
     "where": "Sources/ZapretMac/Pages/DomainsPage.swift:49",
     "line": ": String(localized: \"Add the sites that do not open, like youtube.com or discord.com. Paste many at once.\"))"
   },
-  "List": {
-    "en": "List",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:57",
-    "line": "Picker(\"List\", selection: $showExcluded) {",
-    "note": "Label of the segmented control Sites to Unblock / Never Touch. Read by VoiceOver."
-  },
-  "Sites to Unblock": {
-    "en": "Sites to Unblock",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:58",
-    "line": "Text(\"Sites to Unblock\").tag(false)",
-    "note": "Name of the list of sites the bypass should open. Short segmented-control label."
-  },
-  "Never Touch": {
-    "en": "Never Touch",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:59",
-    "line": "Text(\"Never Touch\").tag(true)",
-    "note": "Name of the list of sites the bypass must never change (banks etc.). Short segmented-control label."
-  },
-  "Import": {
-    "en": "Import",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:65",
-    "line": "Button(\"Import\", systemImage: \"square.and.arrow.down\") { importing = true }"
-  },
-  "Add every domain in a text file, one per line": {
-    "en": "Add every domain in a text file, one per line",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:66",
-    "line": ".help(\"Add every domain in a text file, one per line\")"
-  },
-  "Add Sites": {
-    "en": "Add Sites",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:69",
-    "line": "Button(\"Add Sites\", systemImage: \"plus\") { inputFocused = true }"
-  },
-  "Type or paste sites to add (Shift-Command-N)": {
-    "en": "Type or paste sites to add (Shift-Command-N)",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:70",
-    "line": ".help(\"Type or paste sites to add (Shift-Command-N)\")"
-  },
-  "Delete the selected sites. Undo with Command-Z (Delete)": {
-    "en": "Delete the selected sites. Undo with Command-Z (Delete)",
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:77",
-    "line": ".help(\"Delete the selected sites. Undo with Command-Z (Delete)\")"
-  },
   "Added %lld sites.": {
     "en": {
       "one": "Added 1 site.",
       "other": "Added %lld sites."
     },
-    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:90",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:68",
     "line": "note = String(localized: \"Added \\(added) sites.\")"
+  },
+  "Move to Sites to Unblock": {
+    "en": "Move to Sites to Unblock",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:87",
+    "line": "Button(showExcluded ? String(localized: \"Move to Sites to Unblock\") : String(localized: \"Move to Never Touch\")) {"
+  },
+  "Move to Never Touch": {
+    "en": "Move to Never Touch",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:87",
+    "line": "Button(showExcluded ? String(localized: \"Move to Sites to Unblock\") : String(localized: \"Move to Never Touch\")) {"
+  },
+  "List": {
+    "en": "List",
+    "where": "Sources/ZapretMac/Pages/DomainsPage.swift:99",
+    "line": "Picker(\"List\", selection: $showExcluded) {",
+    "note": "Label of the segmented control Sites to Unblock / Never Touch. Read by VoiceOver."
   },
   "Also scan HTTP": {
     "en": "Also scan HTTP",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:112",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:114",
     "line": "Button(\"Also scan HTTP\") { model.alsoScanHTTP() }",
     "note": "Footer button after an HTTPS scan: run the plain-HTTP tries on the same site."
   },
   "Run the HTTP tries on http:// and the same site": {
     "en": "Run the HTTP tries on http:// and the same site",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:113",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:115",
     "line": ".help(\"Run the HTTP tries on http:// and the same site\")"
   },
   "Save HTTP + HTTPS Strategy…": {
     "en": "Save HTTP + HTTPS Strategy…",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:116",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:118",
     "line": "Button(\"Save HTTP + HTTPS Strategy…\") { model.saveJoinedScan() }",
     "note": "Footer button: save one strategy that uses the best HTTP try for port 80 and the best HTTPS try for port 443."
   },
   "One strategy: the fastest HTTP try for port 80 and the fastest HTTPS try for port 443": {
     "en": "One strategy: the fastest HTTP try for port 80 and the fastest HTTPS try for port 443",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:117",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:119",
     "line": ".help(\"One strategy: the fastest HTTP try for port 80 and the fastest HTTPS try for port 443\")"
   },
   "Done": {
     "en": "Done",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:119",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:121",
     "line": "Button(\"Done\") {"
   },
   "Tries the built-in strategies and yours.": {
     "en": "Tries the built-in strategies and yours.",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:145",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:147",
     "line": "case .quick: String(localized: \"Tries the built-in strategies and yours.\")"
   },
   "Tries every split and TLS-record combination zapret's blockcheck tests. Takes a few minutes.": {
     "en": "Tries every split and TLS-record combination zapret's blockcheck tests. Takes a few minutes.",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:146",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:148",
     "line": "case .thorough: String(localized: \"Tries every split and TLS-record combination zapret's blockcheck tests. Takes a few minutes.\")"
   },
   "%lld of %lld tried…": {
     "en": "%lld of %lld tried…",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:155",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:157",
     "line": "return String(localized: \"\\(done) of \\(total) tried…\")",
     "note": "Progress line while strategies are tested, e.g. '12 of 39 tried…'."
   },
   "Stopped after %lld of %lld.": {
     "en": "Stopped after %lld of %lld.",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:157",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:159",
     "line": "if finder.isStopped { return String(localized: \"Stopped after \\(done) of \\(total).\") }",
     "note": "Footer after the user pressed Stop: how many tries finished out of all."
   },
   "No strategy opened every site.": {
     "en": "No strategy opened every site.",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:160",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:162",
     "line": "if finder.workingCount == 0 { return String(localized: \"No strategy opened every site.\") }"
   },
   "%lld strategies open every site.": {
@@ -426,12 +532,12 @@
       "one": "1 strategy opens every site.",
       "other": "%lld strategies open every site."
     },
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:161",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:163",
     "line": "return String(localized: \"\\(finder.workingCount) strategies open every site.\")"
   },
   "No strategy opened %@.": {
     "en": "No strategy opened %@.",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:163",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:165",
     "line": "if finder.workingCount == 0 { return String(localized: \"No strategy opened \\(finder.site).\") }"
   },
   "%lld strategies open %@.": {
@@ -439,7 +545,7 @@
       "one": "1 strategy opens %@.",
       "other": "%lld strategies open %@."
     },
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:164",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:166",
     "line": "return String(localized: \"\\(finder.workingCount) strategies open \\(finder.site).\")"
   },
   "Find a Strategy": {
@@ -455,36 +561,36 @@
   },
   "Testing…": {
     "en": "Testing…",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:201",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:202",
     "line": "case .testing: Text(\"Testing…\").foregroundStyle(.secondary)"
   },
   "%lld ms": {
     "en": "%lld ms",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:203",
-    "line": "Text(\"\\(ms) ms\").foregroundStyle(.secondary).monospacedDigit()",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:205",
+    "line": "Text(\"\\(ms) ms\").foregroundStyle(.secondary).monospacedDigit().fixedSize()",
     "note": "Milliseconds after a response time, short unit."
   },
   "Opened %lld of %lld": {
     "en": "Opened %lld of %lld",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:207",
-    "line": "Text(\"Opened \\(trial.openCount) of \\(trial.sites.count)\").foregroundStyle(.secondary).monospacedDigit()",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:209",
+    "line": "Text(\"Opened \\(trial.openCount) of \\(trial.sites.count)\").foregroundStyle(.secondary).monospacedDigit().fixedSize()",
     "note": "Small text on a result row: how many of the tested sites opened, e.g. 'Opened 2 of 3'."
   },
   "%@: opens in %lld ms": {
     "en": "%@: opens in %lld ms",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:225",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:227",
     "line": "case .opens(let ms): String(localized: \"\\(attempt.site): opens in \\(ms) ms\")",
     "note": "One site's result in a tooltip: site name opened in so many milliseconds."
   },
   "%@: %@": {
     "en": "%@: %@",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:226",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:228",
     "line": "case .fails(let reason): String(localized: \"\\(attempt.site): \\(reason)\")",
     "note": "One site's result in a tooltip: site name, then the reason it failed."
   },
   "In use": {
     "en": "In use",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:247",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:249",
     "line": "Label(\"In use\", systemImage: \"checkmark\")",
     "note": "Small tag on a strategy card: this is the strategy currently used."
   },
@@ -496,7 +602,7 @@
   },
   "Use": {
     "en": "Use",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:252",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:254",
     "line": "Button(\"Use\", action: use)",
     "note": "Small button on a row: start using this strategy."
   },
@@ -508,7 +614,7 @@
   },
   "Opens · %lld · %lld ms": {
     "en": "Opens · %lld · %lld ms",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:265",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:267",
     "line": "Label(\"Opens · \\(status) · \\(ms) ms\", systemImage: \"checkmark.circle.fill\")",
     "note": "Result of opening a site: 'opens' · HTTP status code · response time."
   },
@@ -548,16 +654,16 @@
     "where": "Sources/ZapretMac/Pages/FinderSheet.swift:56",
     "line": "Text(\"Without ZapretMac\")"
   },
+  "Save": {
+    "en": "Save",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:89",
+    "line": "Button(\"Save\") { model.saveScanRow(trial) }"
+  },
   "Save as Strategy…": {
     "en": "Save as Strategy…",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:87",
-    "line": "Button(\"Save as Strategy…\") { model.saveScanRow(trial) }",
+    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:91",
+    "line": ".help(\"Save as Strategy…\")",
     "note": "Small button on a working result row: open the strategy editor with this row's flags."
-  },
-  "Open the strategy editor with these flags": {
-    "en": "Open the strategy editor with these flags",
-    "where": "Sources/ZapretMac/Pages/FinderSheet.swift:89",
-    "line": ".help(\"Open the strategy editor with these flags\")"
   },
   "%lld lines": {
     "en": {
@@ -642,42 +748,42 @@
   },
   "Turn bypass off": {
     "en": "Turn bypass off",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:136",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:138",
     "line": ".accessibilityLabel(isOn ? String(localized: \"Turn bypass off\") : String(localized: \"Turn bypass on\"))"
   },
   "Turn bypass on": {
     "en": "Turn bypass on",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:136",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:138",
     "line": ".accessibilityLabel(isOn ? String(localized: \"Turn bypass off\") : String(localized: \"Turn bypass on\"))"
   },
   "Running for": {
     "en": "Running for",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:160",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:162",
     "line": "StatTile(title: \"Running for\", symbol: \"clock\","
   },
   "Connections": {
     "en": "Connections",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:163",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:165",
     "line": "StatTile(title: \"Connections\", symbol: \"arrow.left.arrow.right\","
   },
   "Sites seen": {
     "en": "Sites seen",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:165",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:167",
     "line": "StatTile(title: \"Sites seen\", symbol: \"globe\","
   },
   "How tpws changes your traffic so the filter cannot read it.": {
     "en": "How tpws changes your traffic so the filter cannot read it.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:206",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:208",
     "line": "caption: String(localized: \"How tpws changes your traffic so the filter cannot read it.\")) {"
   },
   "Your list is empty. Add sites on the Sites page, or choose All sites.": {
     "en": "Your list is empty. Add sites on the Sites page, or choose All sites.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:212",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:214",
     "line": "? String(localized: \"Your list is empty. Add sites on the Sites page, or choose All sites.\")"
   },
   "Every site goes through the bypass.": {
     "en": "Every site goes through the bypass.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:213",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:215",
     "line": ": (prefs.scope == .allSites ? String(localized: \"Every site goes through the bypass.\")"
   },
   "Only the %lld sites in your list.": {
@@ -685,35 +791,41 @@
       "one": "Only the one site in your list.",
       "other": "Only the %lld sites in your list."
     },
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:214",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:216",
     "line": ": String(localized: \"Only the \\(includeCount) sites in your list.\"))) {"
   },
   "All sites": {
     "en": "All sites",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:217",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:219",
     "line": "Text(\"All sites\").tag(Scope.allSites)",
     "note": "Segmented control: every site goes through the bypass. Very short."
   },
   "My list": {
     "en": "My list",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:218",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:220",
     "line": "Text(\"My list\").tag(Scope.listOnly)",
     "note": "Segmented control next to 'All sites': only sites in the user's list. Very short."
   },
+  "Only the sites in your list go through ZapretMac; others connect directly.": {
+    "en": "Only the sites in your list go through ZapretMac; others connect directly.",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:229",
+    "line": "? String(localized: \"Only the sites in your list go through ZapretMac; others connect directly.\")",
+    "note": "Caption of the System proxy row when only listed sites use the proxy (PAC mode)."
+  },
   "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.": {
     "en": "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:226",
-    "line": "caption: String(localized: \"Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.\")) {"
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:230",
+    "line": ": String(localized: \"Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.\")) {"
   },
   "Built-in": {
     "en": "Built-in",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:246",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:250",
     "line": "Section(\"Built-in\") {",
     "note": "Section title: strategies that ship with the app."
   },
   "Yours": {
     "en": "Yours",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:255",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:259",
     "line": "Section(\"Yours\") {",
     "note": "Section title: the strategies the user made."
   },
@@ -730,95 +842,89 @@
   },
   "Check a site": {
     "en": "Check a site",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:311",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:315",
     "line": "Label(\"Check a site\", systemImage: \"checkmark.seal\")"
-  },
-  "Address": {
-    "en": "Address",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:316",
-    "line": "TextField(\"Address\", text: $prefs.testURL, prompt: Text(\"discord.com\"))",
-    "note": "Text field label for a website address."
   },
   "Check": {
     "en": "Check",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:325",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:329",
     "line": "Text(\"Check\").frame(minWidth: 48)",
     "note": "Button that opens a site with and without the bypass to compare."
   },
   "Open the site with and without ZapretMac (Command-T)": {
     "en": "Open the site with and without ZapretMac (Command-T)",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:330",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:334",
     "line": ".help(\"Open the site with and without ZapretMac (Command-T)\")"
   },
   "With ZapretMac": {
     "en": "With ZapretMac",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:336",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:340",
     "line": "CheckRow(title: \"With ZapretMac\", outcome: via)"
   },
   "Turn the bypass on to compare": {
     "en": "Turn the bypass on to compare",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:341",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:345",
     "line": "Text(\"Turn the bypass on to compare\").font(.callout).foregroundStyle(.tertiary)"
   },
   "Try every strategy on this site (Shift-Command-T)": {
     "en": "Try every strategy on this site (Shift-Command-T)",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:353",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:357",
     "line": ".help(\"Try every strategy on this site (Shift-Command-T)\")"
   },
   "Opens the address once directly and once through tpws, so you can see whether the strategy helps.": {
     "en": "Opens the address once directly and once through tpws, so you can see whether the strategy helps.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:357",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:361",
     "line": "Text(\"Opens the address once directly and once through tpws, so you can see whether the strategy helps.\")"
   },
   "The site opens without help.": {
     "en": "The site opens without help.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:369",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:373",
     "line": "return r.direct.isOK ? String(localized: \"The site opens without help.\") : String(localized: \"The site does not open directly.\")"
   },
   "The site does not open directly.": {
     "en": "The site does not open directly.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:369",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:373",
     "line": "return r.direct.isOK ? String(localized: \"The site opens without help.\") : String(localized: \"The site does not open directly.\")"
   },
   "ZapretMac opens this site. The strategy works.": {
     "en": "ZapretMac opens this site. The strategy works.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:372",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:376",
     "line": "case (false, true): return String(localized: \"ZapretMac opens this site. The strategy works.\")"
   },
   "The site opens either way.": {
     "en": "The site opens either way.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:373",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:377",
     "line": "case (true, true): return String(localized: \"The site opens either way.\")"
   },
   "Still blocked. Try another strategy.": {
     "en": "Still blocked. Try another strategy.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:374",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:378",
     "line": "case (false, false): return String(localized: \"Still blocked. Try another strategy.\")"
   },
   "The strategy breaks this site. Add it to Never Touch, or pick another strategy.": {
     "en": "The strategy breaks this site. Add it to Never Touch, or pick another strategy.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:375",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:379",
     "line": "case (true, false): return String(localized: \"The strategy breaks this site. Add it to Never Touch, or pick another strategy.\")"
   },
   "%lld · %lld ms": {
     "en": "%lld · %lld ms",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:390",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:394",
     "line": "Label(\"\\(status) · \\(ms) ms\", systemImage: \"checkmark.circle.fill\")",
     "note": "HTTP status code · response time."
   },
   "Recent sites": {
     "en": "Recent sites",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:409",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:413",
     "line": "Label(\"Recent sites\", systemImage: \"clock.arrow.circlepath\")"
   },
   "Add to Sites to Unblock": {
     "en": "Add to Sites to Unblock",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:419",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:423",
     "line": "Button(\"Add to Sites to Unblock\") { model.addDomains(from: host, excluded: false) }"
   },
   "Add to Never Touch": {
     "en": "Add to Never Touch",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:420",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:424",
     "line": "Button(\"Add to Never Touch\") { model.addDomains(from: host, excluded: true) }"
   },
   "Bypass is off": {
@@ -846,14 +952,19 @@
     "where": "Sources/ZapretMac/Pages/OverviewPage.swift:79",
     "line": "String(localized: \"Starting tpws on port \\(String(model.prefs.port)).\")"
   },
+  "The sites in your list now go through %@; other sites connect directly.": {
+    "en": "The sites in your list now go through %@; other sites connect directly.",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:83",
+    "line": "? String(localized: \"The sites in your list now go through \\(model.activeStrategy.name); other sites connect directly.\")"
+  },
   "Every app that uses the system proxy now goes through %@.": {
     "en": "Every app that uses the system proxy now goes through %@.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:82",
-    "line": "? String(localized: \"Every app that uses the system proxy now goes through \\(model.activeStrategy.name).\")"
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:84",
+    "line": ": String(localized: \"Every app that uses the system proxy now goes through \\(model.activeStrategy.name).\"))"
   },
   "SOCKS5 proxy ready at 127.0.0.1:%@. Point your browser at it.": {
     "en": "SOCKS5 proxy ready at 127.0.0.1:%@. Point your browser at it.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:83",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:85",
     "line": ": String(localized: \"SOCKS5 proxy ready at 127.0.0.1:\\(String(model.prefs.port)). Point your browser at it.\")"
   },
   "no flags": {
@@ -932,18 +1043,8 @@
     "where": "Sources/ZapretMac/Pages/StrategyEditor.swift:104",
     "line": ".help(\"Replace the options with tpws flags from the clipboard\")"
   },
-  "Cancel": {
-    "en": "Cancel",
-    "where": "Sources/ZapretMac/Pages/StrategyEditor.swift:119",
-    "line": "Button(\"Cancel\", role: .cancel) { dismiss() }"
-  },
   "Create": {
     "en": "Create",
-    "where": "Sources/ZapretMac/Pages/StrategyEditor.swift:121",
-    "line": "Button(draft.editing == nil ? String(localized: \"Create\") : String(localized: \"Save\")) {"
-  },
-  "Save": {
-    "en": "Save",
     "where": "Sources/ZapretMac/Pages/StrategyEditor.swift:121",
     "line": "Button(draft.editing == nil ? String(localized: \"Create\") : String(localized: \"Save\")) {"
   },
@@ -962,11 +1063,6 @@
     "where": "Sources/ZapretMac/Pages/StrategyEditor.swift:31",
     "line": "TextField(\"Name\", text: $draft.name, prompt: Text(\"My Provider\"))",
     "note": "Placeholder example name for a new strategy, e.g. named after an internet provider."
-  },
-  "Name": {
-    "en": "Name",
-    "where": "Sources/ZapretMac/Pages/StrategyEditor.swift:31",
-    "line": "TextField(\"Name\", text: $draft.name, prompt: Text(\"My Provider\"))"
   },
   "Split at": {
     "en": "Split at",
@@ -1080,44 +1176,64 @@
     "where": "Sources/ZapretMac/Pages/StrategyEditor.swift:95",
     "line": "Text(options.commandLine.isEmpty ? String(localized: \"No flags: traffic is passed through unchanged.\") : options.commandLine)"
   },
+  "The server answered with error %lld.": {
+    "en": "The server answered with error %lld.",
+    "where": "Sources/ZapretMac/SeedData.swift:27",
+    "line": "failed.lastError = String(localized: \"The server answered with error \\(404).\")"
+  },
+  "Proxy": {
+    "en": "Proxy",
+    "where": "Sources/ZapretMac/SettingsView.swift:102",
+    "line": "Text(\"Proxy\")"
+  },
+  "Language": {
+    "en": "Language",
+    "where": "Sources/ZapretMac/SettingsView.swift:108",
+    "line": "LabeledContent(\"Language\") {"
+  },
+  "Change in System Settings…": {
+    "en": "Change in System Settings…",
+    "where": "Sources/ZapretMac/SettingsView.swift:111",
+    "line": "Button(\"Change in System Settings…\") {"
+  },
   "ZapretMac follows your Mac's language. To use another language for ZapretMac only, add it under Applications in Language & Region.": {
     "en": "ZapretMac follows your Mac's language. To use another language for ZapretMac only, add it under Applications in Language & Region.",
-    "where": "Sources/ZapretMac/SettingsView.swift:100",
+    "where": "Sources/ZapretMac/SettingsView.swift:119",
     "line": "Text(\"ZapretMac follows your Mac's language. To use another language for ZapretMac only, add it under Applications in Language & Region.\")"
   },
   "Show every connection in the log": {
     "en": "Show every connection in the log",
-    "where": "Sources/ZapretMac/SettingsView.swift:104",
+    "where": "Sources/ZapretMac/SettingsView.swift:123",
     "line": "Toggle(\"Show every connection in the log\", isOn: Binding(get: { prefs.verboseLog },"
   },
   "Use a port from 1024 to 65535.": {
     "en": "Use a port from 1024 to 65535.",
-    "where": "Sources/ZapretMac/SettingsView.swift:111",
+    "where": "Sources/ZapretMac/SettingsView.swift:130",
     "line": "if let port = Int(portText), !TPWSCommand.isValidPort(port) { return String(localized: \"Use a port from 1024 to 65535.\") }"
   },
   "tpws listens on 127.0.0.1 only. Press Return to apply. Browsers without the system proxy can use SOCKS5 127.0.0.1:%@.": {
     "en": "tpws listens on 127.0.0.1 only. Press Return to apply. Browsers without the system proxy can use SOCKS5 127.0.0.1:%@.",
-    "where": "Sources/ZapretMac/SettingsView.swift:112",
+    "where": "Sources/ZapretMac/SettingsView.swift:131",
     "line": "return String(localized: \"tpws listens on 127.0.0.1 only. Press Return to apply. Browsers without the system proxy can use SOCKS5 127.0.0.1:\\(String(model.prefs"
   },
   "zapret source": {
     "en": "zapret source",
-    "where": "Sources/ZapretMac/SettingsView.swift:129",
+    "where": "Sources/ZapretMac/SettingsView.swift:148",
     "line": "LabeledContent(\"zapret source\", value: String(ZapretSource.commit.prefix(10)))"
   },
   "ZapretMac is free and open source. The bypass engine is tpws from zapret by bol-van, MIT license.": {
     "en": "ZapretMac is free and open source. The bypass engine is tpws from zapret by bol-van, MIT license.",
-    "where": "Sources/ZapretMac/SettingsView.swift:131",
+    "where": "Sources/ZapretMac/SettingsView.swift:150",
     "line": "Text(\"ZapretMac is free and open source. The bypass engine is tpws from zapret by bol-van, MIT license.\")"
   },
   "zapret on GitHub": {
     "en": "zapret on GitHub",
-    "where": "Sources/ZapretMac/SettingsView.swift:135",
+    "where": "Sources/ZapretMac/SettingsView.swift:154",
     "line": "Link(\"zapret on GitHub\", destination: URL(string: \"https://github.com/bol-van/zapret\")!)"
   },
   "tpws options": {
     "en": "tpws options",
-    "where": "Sources/ZapretMac/SettingsView.swift:136",
+    "where": "Sources/ZapretMac/SettingsView.swift:155",
     "line": "Link(\"tpws options\", destination: URL(string: \"https://github.com/bol-van/zapret/blob/master/docs/readme.en.md#tpws\")!)"
   },
   "General": {
@@ -1137,43 +1253,94 @@
   },
   "Startup": {
     "en": "Startup",
-    "where": "Sources/ZapretMac/SettingsView.swift:67",
+    "where": "Sources/ZapretMac/SettingsView.swift:68",
     "line": "Section(\"Startup\") {"
   },
   "Open at login": {
     "en": "Open at login",
-    "where": "Sources/ZapretMac/SettingsView.swift:68",
+    "where": "Sources/ZapretMac/SettingsView.swift:69",
     "line": "Toggle(\"Open at login\", isOn: Binding(get: { model.launchAtLogin },"
   },
   "Turn the bypass on when ZapretMac opens": {
     "en": "Turn the bypass on when ZapretMac opens",
-    "where": "Sources/ZapretMac/SettingsView.swift:70",
+    "where": "Sources/ZapretMac/SettingsView.swift:71",
     "line": "Toggle(\"Turn the bypass on when ZapretMac opens\", isOn: $prefs.startOnLaunch)"
+  },
+  "Global shortcut": {
+    "en": "Global shortcut",
+    "where": "Sources/ZapretMac/SettingsView.swift:74",
+    "line": "LabeledContent(\"Global shortcut\") {",
+    "note": "Settings row label: a keyboard shortcut that works in every app."
+  },
+  "Shortcut": {
+    "en": "Shortcut",
+    "where": "Sources/ZapretMac/SettingsView.swift:78",
+    "line": "Text(\"Shortcut\")",
+    "note": "Settings section title for the global shortcut."
+  },
+  "Another app uses this shortcut. Choose another one.": {
+    "en": "Another app uses this shortcut. Choose another one.",
+    "where": "Sources/ZapretMac/SettingsView.swift:81",
+    "line": "Text(\"Another app uses this shortcut. Choose another one.\")"
+  },
+  "Use Command, Option, or Control with the key. Press Escape to cancel.": {
+    "en": "Use Command, Option, or Control with the key. Press Escape to cancel.",
+    "where": "Sources/ZapretMac/SettingsView.swift:84",
+    "line": "Text(\"Use Command, Option, or Control with the key. Press Escape to cancel.\")"
+  },
+  "Works in any app: press it to turn the bypass on or off.": {
+    "en": "Works in any app: press it to turn the bypass on or off.",
+    "where": "Sources/ZapretMac/SettingsView.swift:87",
+    "line": "Text(\"Works in any app: press it to turn the bypass on or off.\")"
   },
   "SOCKS port": {
     "en": "SOCKS port",
-    "where": "Sources/ZapretMac/SettingsView.swift:73",
+    "where": "Sources/ZapretMac/SettingsView.swift:92",
     "line": "LabeledContent(\"SOCKS port\") {"
   },
   "Use as system proxy": {
     "en": "Use as system proxy",
-    "where": "Sources/ZapretMac/SettingsView.swift:80",
+    "where": "Sources/ZapretMac/SettingsView.swift:99",
     "line": "Toggle(\"Use as system proxy\", isOn: Binding(get: { prefs.useSystemProxy },"
   },
-  "Proxy": {
-    "en": "Proxy",
-    "where": "Sources/ZapretMac/SettingsView.swift:83",
-    "line": "Text(\"Proxy\")"
+  "Delete Subscription": {
+    "en": "Delete Subscription",
+    "where": "Sources/ZapretMac/Subscriptions.swift:136",
+    "line": "? String(localized: \"Delete Subscription\") : String(localized: \"Delete \\(subscriptions.count) Subscriptions\"))"
   },
-  "Language": {
-    "en": "Language",
-    "where": "Sources/ZapretMac/SettingsView.swift:89",
-    "line": "LabeledContent(\"Language\") {"
+  "Delete %lld Subscriptions": {
+    "en": {
+      "one": "Delete Subscription",
+      "other": "Delete Subscriptions"
+    },
+    "where": "Sources/ZapretMac/Subscriptions.swift:136",
+    "line": "? String(localized: \"Delete Subscription\") : String(localized: \"Delete \\(subscriptions.count) Subscriptions\"))",
+    "note": "Undo menu action name: Edit menu shows 'Undo <this>'. The number is never shown; forms only pick singular/plural."
   },
-  "Change in System Settings…": {
-    "en": "Change in System Settings…",
-    "where": "Sources/ZapretMac/SettingsView.swift:92",
-    "line": "Button(\"Change in System Settings…\") {"
+  "This address is not a site list.": {
+    "en": "This address is not a site list.",
+    "where": "Sources/ZapretMac/Subscriptions.swift:204",
+    "line": "case SiteListSubscription.Failure.notText: String(localized: \"This address is not a site list.\")"
+  },
+  "The list has no sites in it.": {
+    "en": "The list has no sites in it.",
+    "where": "Sources/ZapretMac/Subscriptions.swift:205",
+    "line": "case SiteListSubscription.Failure.empty: String(localized: \"The list has no sites in it.\")"
+  },
+  "The list is too large.": {
+    "en": "The list is too large.",
+    "where": "Sources/ZapretMac/Subscriptions.swift:206",
+    "line": "case SiteListSubscription.Failure.tooLarge: String(localized: \"The list is too large.\")"
+  },
+  "The gzip file is damaged.": {
+    "en": "The gzip file is damaged.",
+    "where": "Sources/ZapretMac/Subscriptions.swift:207",
+    "line": "case is Gzip.Failure: String(localized: \"The gzip file is damaged.\")"
+  },
+  "This list is already in your subscriptions.": {
+    "en": "This list is already in your subscriptions.",
+    "where": "Sources/ZapretMac/Subscriptions.swift:61",
+    "line": "return String(localized: \"This list is already in your subscriptions.\")"
   },
   "Accent color": {
     "en": "Accent color",
@@ -1210,6 +1377,50 @@
     "en": "System proxy",
     "where": "Sources/ZapretMac/UI/AppearanceSettings.swift:99",
     "line": "Text(\"System proxy\").font(.caption).foregroundStyle(.secondary)"
+  },
+  "Remove Shortcut": {
+    "en": "Remove Shortcut",
+    "where": "Sources/ZapretMac/UI/ShortcutRecorder.swift:27",
+    "line": "Label(\"Remove Shortcut\", systemImage: \"xmark.circle.fill\")"
+  },
+  "Remove the shortcut": {
+    "en": "Remove the shortcut",
+    "where": "Sources/ZapretMac/UI/ShortcutRecorder.swift:32",
+    "line": ".help(\"Remove the shortcut\")"
+  },
+  "Press a key combination, or Escape to cancel": {
+    "en": "Press a key combination, or Escape to cancel",
+    "where": "Sources/ZapretMac/UI/ShortcutRecorder.swift:44",
+    "line": ".help(recording ? String(localized: \"Press a key combination, or Escape to cancel\") : String(localized: \"Click, then press a key combination\"))"
+  },
+  "Click, then press a key combination": {
+    "en": "Click, then press a key combination",
+    "where": "Sources/ZapretMac/UI/ShortcutRecorder.swift:44",
+    "line": ".help(recording ? String(localized: \"Press a key combination, or Escape to cancel\") : String(localized: \"Click, then press a key combination\"))"
+  },
+  "Type Shortcut": {
+    "en": "Type Shortcut",
+    "where": "Sources/ZapretMac/UI/ShortcutRecorder.swift:48",
+    "line": "if recording { return String(localized: \"Type Shortcut\") }",
+    "note": "Shown inside the shortcut recorder while it waits for keys. Very short."
+  },
+  "Record Shortcut": {
+    "en": "Record Shortcut",
+    "where": "Sources/ZapretMac/UI/ShortcutRecorder.swift:49",
+    "line": "return model.prefs.globalShortcut?.displayString ?? String(localized: \"Record Shortcut\")",
+    "note": "Shown inside the shortcut recorder when no shortcut is set. Very short."
+  },
+  "Space": {
+    "en": "Space",
+    "where": "Sources/ZapretMacKit/GlobalShortcut.swift:59",
+    "line": "case 49: return String(localized: \"Space\", bundle: .main)",
+    "note": "Name of the Space bar key, shown in a keyboard shortcut like '⌃⌥Space'. Use the key name your macOS uses."
+  },
+  "Help": {
+    "en": "Help",
+    "where": "Sources/ZapretMacKit/GlobalShortcut.swift:60",
+    "line": "case 114: return String(localized: \"Help\", bundle: .main)",
+    "note": "Name of the Help key, shown in a keyboard shortcut. Use the key name your macOS uses."
   },
   "%lld s": {
     "en": "%lld s",

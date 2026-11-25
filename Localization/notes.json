@@ -48,6 +48,10 @@
     "%lld strategies open every site.": {
       "one": "1 strategy opens every site.",
       "other": "%lld strategies open every site."
+    },
+    "Delete %lld Subscriptions": {
+      "one": "Delete Subscription",
+      "other": "Delete Subscriptions"
     }
   },
   "_note": {
@@ -109,6 +113,19 @@
     "Save as Strategy…": "Small button on a working result row: open the strategy editor with this row's flags.",
     "Also scan HTTP": "Footer button after an HTTPS scan: run the plain-HTTP tries on the same site.",
     "Save HTTP + HTTPS Strategy…": "Footer button: save one strategy that uses the best HTTP try for port 80 and the best HTTPS try for port 443.",
-    "%@ only works on Linux. On a Mac it does nothing.": "Orange note in the strategy editor; %@ is a tpws flag like --mss."
+    "%@ only works on Linux. On a Mac it does nothing.": "Orange note in the strategy editor; %@ is a tpws flag like --mss.",
+    "Delete %lld Subscriptions": "Undo menu action name: Edit menu shows 'Undo <this>'. The number is never shown; forms only pick singular/plural.",
+    "Updated %@": "Row caption of a subscribed list; %@ is a relative time already in the user's language, e.g. '2 hours ago' / 'vor 2 Stunden'. Write it so that phrase fits.",
+    "Space": "Name of the Space bar key, shown in a keyboard shortcut like '⌃⌥Space'. Use the key name your macOS uses.",
+    "Help": "Name of the Help key, shown in a keyboard shortcut. Use the key name your macOS uses.",
+    "Add to": "Picker label in the Add Subscription sheet: which list the subscription goes to (Sites to Unblock / Never Touch).",
+    "From the address": "Placeholder of the optional Name field: if empty, the name is taken from the address.",
+    "Subscriptions": "Section title on the Sites page: lists downloaded from the web.",
+    "Subscribe": "Default button of the Add Subscription sheet.",
+    "Global shortcut": "Settings row label: a keyboard shortcut that works in every app.",
+    "Shortcut": "Settings section title for the global shortcut.",
+    "Type Shortcut": "Shown inside the shortcut recorder while it waits for keys. Very short.",
+    "Record Shortcut": "Shown inside the shortcut recorder when no shortcut is set. Very short.",
+    "Only the sites in your list go through ZapretMac; others connect directly.": "Caption of the System proxy row when only listed sites use the proxy (PAC mode)."
   }
 }
