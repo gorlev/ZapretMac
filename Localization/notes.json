@@ -132,6 +132,8 @@
     "Helper": "Row label: the small background program that runs as administrator for Transparent mode. Value is its state (Ready / Not installed / Needs approval in Login Items).",
     "Ready": "State of the helper: installed and answering.",
     "Remove the helper?": "Title of a confirmation alert before removing the helper.",
-    "Turn on ZapretMac in System Settings, under General, Login Items & Extensions.": "Use the names your macOS gives these panes (System Settings > General > Login Items & Extensions)."
+    "Turn on ZapretMac in System Settings, under General, Login Items & Extensions.": "Use the names your macOS gives these panes (System Settings > General > Login Items & Extensions).",
+    "What is Transparent mode?": "Title of a small popover opened by a ? button next to 'Transparent mode'. Use the same name for the mode as everywhere else in your file.",
+    "Normally ZapretMac works as a proxy: apps reach it only if they follow the Mac's proxy setting, and some apps don't. In Transparent mode, macOS itself sends every app's web traffic through ZapretMac, so there is nothing to set up and no app is left out. It needs a small helper that runs with administrator rights; turning the mode off removes its rules.": "Body of the ? popover and its hover tooltip. Readers are everyday users who do not know what a proxy is: keep it short, plain, and friendly; use the same words for 'helper' and the mode as in the rest of your file."
   }
 }

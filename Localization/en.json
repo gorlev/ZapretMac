@@ -861,27 +861,27 @@
   "On in Settings > Advanced. Apps need no proxy settings.": {
     "en": "On in Settings > Advanced. Apps need no proxy settings.",
     "where": "Sources/ZapretMac/Pages/OverviewPage.swift:246",
-    "line": "caption: String(localized: \"On in Settings > Advanced. Apps need no proxy settings.\")) {"
+    "line": "caption: String(localized: \"On in Settings > Advanced. Apps need no proxy settings.\"),"
   },
   "Open Settings > Advanced": {
     "en": "Open Settings > Advanced",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:251",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:252",
     "line": ".help(\"Open Settings > Advanced\")"
   },
   "Only the sites in your list go through ZapretMac; others connect directly.": {
     "en": "Only the sites in your list go through ZapretMac; others connect directly.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:265",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:266",
     "line": "? String(localized: \"Only the sites in your list go through ZapretMac; others connect directly.\")",
     "note": "Caption of the System proxy row when only listed sites use the proxy (PAC mode)."
   },
   "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.": {
     "en": "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:266",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:267",
     "line": ": String(localized: \"Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.\")) {"
   },
   "Built-in": {
     "en": "Built-in",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:283",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:284",
     "line": "Section(\"Built-in\") {",
     "note": "Section title: strategies that ship with the app."
   },
@@ -898,100 +898,100 @@
   },
   "Yours": {
     "en": "Yours",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:292",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:293",
     "line": "Section(\"Yours\") {",
     "note": "Section title: the strategies the user made."
   },
   "Check a site": {
     "en": "Check a site",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:348",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:354",
     "line": "Label(\"Check a site\", systemImage: \"checkmark.seal\")"
   },
   "Check": {
     "en": "Check",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:362",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:368",
     "line": "Text(\"Check\").frame(minWidth: 48)",
     "note": "Button that opens a site with and without the bypass to compare."
   },
   "Open the site with and without ZapretMac (Command-T)": {
     "en": "Open the site with and without ZapretMac (Command-T)",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:367",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:373",
     "line": ".help(\"Open the site with and without ZapretMac (Command-T)\")"
   },
   "With ZapretMac": {
     "en": "With ZapretMac",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:372",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:378",
     "line": "CheckRow(title: \"With ZapretMac\", outcome: result.direct)"
   },
   "ZapretMac opens this site in Transparent mode.": {
     "en": "ZapretMac opens this site in Transparent mode.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:375",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:381",
     "line": "Text(result.direct.isOK ? String(localized: \"ZapretMac opens this site in Transparent mode.\")"
   },
   "Still blocked. Try another strategy.": {
     "en": "Still blocked. Try another strategy.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:376",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:382",
     "line": ": String(localized: \"Still blocked. Try another strategy.\"))"
   },
   "Turn the bypass on to compare": {
     "en": "Turn the bypass on to compare",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:390",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:396",
     "line": "Text(\"Turn the bypass on to compare\").font(.callout).foregroundStyle(.tertiary)"
   },
   "Try every strategy on this site (Shift-Command-T)": {
     "en": "Try every strategy on this site (Shift-Command-T)",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:402",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:408",
     "line": ".help(\"Try every strategy on this site (Shift-Command-T)\")"
   },
   "Opens the address once directly and once through tpws, so you can see whether the strategy helps.": {
     "en": "Opens the address once directly and once through tpws, so you can see whether the strategy helps.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:406",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:412",
     "line": "Text(\"Opens the address once directly and once through tpws, so you can see whether the strategy helps.\")"
   },
   "The site opens without help.": {
     "en": "The site opens without help.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:418",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:424",
     "line": "return r.direct.isOK ? String(localized: \"The site opens without help.\") : String(localized: \"The site does not open directly.\")"
   },
   "The site does not open directly.": {
     "en": "The site does not open directly.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:418",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:424",
     "line": "return r.direct.isOK ? String(localized: \"The site opens without help.\") : String(localized: \"The site does not open directly.\")"
   },
   "ZapretMac opens this site. The strategy works.": {
     "en": "ZapretMac opens this site. The strategy works.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:421",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:427",
     "line": "case (false, true): return String(localized: \"ZapretMac opens this site. The strategy works.\")"
   },
   "The site opens either way.": {
     "en": "The site opens either way.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:422",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:428",
     "line": "case (true, true): return String(localized: \"The site opens either way.\")"
   },
   "The strategy breaks this site. Add it to Never Touch, or pick another strategy.": {
     "en": "The strategy breaks this site. Add it to Never Touch, or pick another strategy.",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:424",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:430",
     "line": "case (true, false): return String(localized: \"The strategy breaks this site. Add it to Never Touch, or pick another strategy.\")"
   },
   "%lld · %lld ms": {
     "en": "%lld · %lld ms",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:439",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:445",
     "line": "Label(\"\\(status) · \\(ms) ms\", systemImage: \"checkmark.circle.fill\")",
     "note": "HTTP status code · response time."
   },
   "Recent sites": {
     "en": "Recent sites",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:458",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:464",
     "line": "Label(\"Recent sites\", systemImage: \"clock.arrow.circlepath\")"
   },
   "Add to Sites to Unblock": {
     "en": "Add to Sites to Unblock",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:468",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:474",
     "line": "Button(\"Add to Sites to Unblock\") { model.addDomains(from: host, excluded: false) }"
   },
   "Add to Never Touch": {
     "en": "Add to Never Touch",
-    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:469",
+    "where": "Sources/ZapretMac/Pages/OverviewPage.swift:475",
     "line": "Button(\"Add to Never Touch\") { model.addDomains(from: host, excluded: true) }"
   },
   "Bypass is off": {
@@ -1316,49 +1316,49 @@
   },
   "Sends every app's web traffic through tpws with no proxy setting. It needs a helper that runs as administrator.": {
     "en": "Sends every app's web traffic through tpws with no proxy setting. It needs a helper that runs as administrator.",
-    "where": "Sources/ZapretMac/SettingsView.swift:175",
+    "where": "Sources/ZapretMac/SettingsView.swift:178",
     "line": "Text(\"Sends every app's web traffic through tpws with no proxy setting. It needs a helper that runs as administrator.\")"
   },
   "Install the helper to use Transparent mode.": {
     "en": "Install the helper to use Transparent mode.",
-    "where": "Sources/ZapretMac/SettingsView.swift:178",
+    "where": "Sources/ZapretMac/SettingsView.swift:181",
     "line": "Text(\"Install the helper to use Transparent mode.\")"
   },
   "Turn on ZapretMac in System Settings, under General, Login Items & Extensions.": {
     "en": "Turn on ZapretMac in System Settings, under General, Login Items & Extensions.",
-    "where": "Sources/ZapretMac/SettingsView.swift:182",
+    "where": "Sources/ZapretMac/SettingsView.swift:185",
     "line": "Text(\"Turn on ZapretMac in System Settings, under General, Login Items & Extensions.\")",
     "note": "Use the names your macOS gives these panes (System Settings > General > Login Items & Extensions)."
   },
   "Remove the helper?": {
     "en": "Remove the helper?",
-    "where": "Sources/ZapretMac/SettingsView.swift:190",
+    "where": "Sources/ZapretMac/SettingsView.swift:193",
     "line": ".confirmationDialog(\"Remove the helper?\", isPresented: $confirmRemove) {",
     "note": "Title of a confirmation alert before removing the helper."
   },
   "Transparent mode stops working until you install it again.": {
     "en": "Transparent mode stops working until you install it again.",
-    "where": "Sources/ZapretMac/SettingsView.swift:193",
+    "where": "Sources/ZapretMac/SettingsView.swift:196",
     "line": "Text(\"Transparent mode stops working until you install it again.\")"
   },
   "zapret source": {
     "en": "zapret source",
-    "where": "Sources/ZapretMac/SettingsView.swift:223",
+    "where": "Sources/ZapretMac/SettingsView.swift:226",
     "line": "LabeledContent(\"zapret source\", value: String(ZapretSource.commit.prefix(10)))"
   },
   "ZapretMac is free and open source. The bypass engine is tpws from zapret by bol-van, MIT license.": {
     "en": "ZapretMac is free and open source. The bypass engine is tpws from zapret by bol-van, MIT license.",
-    "where": "Sources/ZapretMac/SettingsView.swift:225",
+    "where": "Sources/ZapretMac/SettingsView.swift:228",
     "line": "Text(\"ZapretMac is free and open source. The bypass engine is tpws from zapret by bol-van, MIT license.\")"
   },
   "zapret on GitHub": {
     "en": "zapret on GitHub",
-    "where": "Sources/ZapretMac/SettingsView.swift:229",
+    "where": "Sources/ZapretMac/SettingsView.swift:232",
     "line": "Link(\"zapret on GitHub\", destination: URL(string: \"https://github.com/bol-van/zapret\")!)"
   },
   "tpws options": {
     "en": "tpws options",
-    "where": "Sources/ZapretMac/SettingsView.swift:230",
+    "where": "Sources/ZapretMac/SettingsView.swift:233",
     "line": "Link(\"tpws options\", destination: URL(string: \"https://github.com/bol-van/zapret/blob/master/docs/readme.en.md#tpws\")!)"
   },
   "General": {
@@ -1502,6 +1502,18 @@
     "en": "System proxy",
     "where": "Sources/ZapretMac/UI/AppearanceSettings.swift:99",
     "line": "Text(\"System proxy\").font(.caption).foregroundStyle(.secondary)"
+  },
+  "What is Transparent mode?": {
+    "en": "What is Transparent mode?",
+    "where": "Sources/ZapretMac/UI/InfoButton.swift:38",
+    "line": "title: String(localized: \"What is Transparent mode?\"),",
+    "note": "Title of a small popover opened by a ? button next to 'Transparent mode'. Use the same name for the mode as everywhere else in your file."
+  },
+  "Normally ZapretMac works as a proxy: apps reach it only if they follow the Mac's proxy setting, and some apps don't. In Transparent mode, macOS itself sends every app's web traffic through ZapretMac, so there is nothing to set up and no app is left out. It needs a small helper that runs with administrator rights; turning the mode off removes its rules.": {
+    "en": "Normally ZapretMac works as a proxy: apps reach it only if they follow the Mac's proxy setting, and some apps don't. In Transparent mode, macOS itself sends every app's web traffic through ZapretMac, so there is nothing to set up and no app is left out. It needs a small helper that runs with administrator rights; turning the mode off removes its rules.",
+    "where": "Sources/ZapretMac/UI/InfoButton.swift:39",
+    "line": "text: String(localized: \"Normally ZapretMac works as a proxy: apps reach it only if they follow the Mac's proxy setting, and some apps don't. In Transparent mod",
+    "note": "Body of the ? popover and its hover tooltip. Readers are everyday users who do not know what a proxy is: keep it short, plain, and friendly; use the same words for 'helper' and the mode as in the rest of your file."
   },
   "Remove Shortcut": {
     "en": "Remove Shortcut",

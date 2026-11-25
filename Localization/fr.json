@@ -363,5 +363,7 @@
   "Install the helper to use Transparent mode.": "Installez l’outil d’assistance pour utiliser le mode transparent.",
   "Turn on ZapretMac in System Settings, under General, Login Items & Extensions.": "Activez ZapretMac dans Réglages Système > Général > Éléments de connexion et extensions.",
   "Remove the helper?": "Supprimer l’outil d’assistance ?",
-  "Transparent mode stops working until you install it again.": "Le mode transparent ne fonctionnera plus tant que vous ne l’aurez pas réinstallé."
+  "Transparent mode stops working until you install it again.": "Le mode transparent ne fonctionnera plus tant que vous ne l’aurez pas réinstallé.",
+  "What is Transparent mode?": "Qu’est-ce que le mode transparent ?",
+  "Normally ZapretMac works as a proxy: apps reach it only if they follow the Mac's proxy setting, and some apps don't. In Transparent mode, macOS itself sends every app's web traffic through ZapretMac, so there is nothing to set up and no app is left out. It needs a small helper that runs with administrator rights; turning the mode off removes its rules.": "D’habitude, ZapretMac fonctionne comme un proxy : seules les apps qui suivent le réglage de proxy du Mac passent par lui, et certaines l’ignorent. En mode transparent, c’est macOS lui-même qui fait passer le trafic web de toutes les apps par ZapretMac : rien à configurer, aucune app oubliée. Ce mode nécessite un petit outil d’assistance doté des droits d’administrateur ; ses règles sont supprimées dès que vous le désactivez."
 }

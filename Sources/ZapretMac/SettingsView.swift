@@ -169,7 +169,10 @@ struct AdvancedSettings: View {
                 }
             }
         } header: {
-            Text("Transparent mode")
+            HStack(spacing: Space.xs) {
+                Text("Transparent mode")
+                InfoButton.transparentMode
+            }
         } footer: {
             VStack(alignment: .leading, spacing: Space.xs) {
                 Text("Sends every app's web traffic through tpws with no proxy setting. It needs a helper that runs as administrator.")

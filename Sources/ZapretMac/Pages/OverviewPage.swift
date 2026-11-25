@@ -243,7 +243,8 @@ private struct SetupCard: View {
             Divider().padding(.leading, 48)
             if prefs.transparentMode {
                 CardRow(title: "Transparent mode", symbol: "arrow.triangle.branch",
-                        caption: String(localized: "On in Settings > Advanced. Apps need no proxy settings.")) {
+                        caption: String(localized: "On in Settings > Advanced. Apps need no proxy settings."),
+                        info: .transparentMode) {
                     Button("Settings…") {
                         model.settingsTab = .advanced
                         openSettings()
@@ -313,6 +314,8 @@ private struct CardRow<Control: View>: View {
     let title: LocalizedStringKey
     let symbol: String
     let caption: String
+    /// A "?" after the title that explains the term.
+    var info: InfoButton? = nil
     @ViewBuilder var control: Control
 
     var body: some View {
@@ -322,7 +325,10 @@ private struct CardRow<Control: View>: View {
                 .foregroundStyle(Palette.accentText)
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.body.weight(.medium))
+                HStack(spacing: Space.xs) {
+                    Text(title).font(.body.weight(.medium))
+                    if let info { info }
+                }
                 Text(caption)
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -363,5 +363,7 @@
   "Install the helper to use Transparent mode.": "Şeffaf modu kullanmak için yardımcı aracı yükleyin.",
   "Turn on ZapretMac in System Settings, under General, Login Items & Extensions.": "Sistem Ayarları > Genel > Giriş Öğeleri ve Uzantılar bölümünde ZapretMac'i açın.",
   "Remove the helper?": "Yardımcı araç kaldırılsın mı?",
-  "Transparent mode stops working until you install it again.": "Yeniden yükleyene kadar Şeffaf mod çalışmaz."
+  "Transparent mode stops working until you install it again.": "Yeniden yükleyene kadar Şeffaf mod çalışmaz.",
+  "What is Transparent mode?": "Şeffaf mod nedir?",
+  "Normally ZapretMac works as a proxy: apps reach it only if they follow the Mac's proxy setting, and some apps don't. In Transparent mode, macOS itself sends every app's web traffic through ZapretMac, so there is nothing to set up and no app is left out. It needs a small helper that runs with administrator rights; turning the mode off removes its rules.": "ZapretMac normalde bir proxy gibi çalışır: uygulamalar ona ancak Mac'in proxy ayarını dikkate alırlarsa ulaşır, bazı uygulamalar bunu yapmaz. Şeffaf modda ise tüm uygulamaların web trafiğini macOS'in kendisi ZapretMac'e yönlendirir. Hiçbir şey ayarlamanız gerekmez, hiçbir uygulama dışarıda kalmaz. Bunun için yönetici yetkisiyle çalışan küçük bir yardımcı araç gerekir; modu kapattığınızda kuralları da kaldırılır."
 }
