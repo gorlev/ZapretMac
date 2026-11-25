@@ -61,6 +61,7 @@ enum SettingsTab: String, CaseIterable, Identifiable {
 struct GeneralSettings: View {
     @Environment(AppModel.self) private var model
     @State private var portText = ""
+    @State private var needsModifier = false
 
     var body: some View {
         @Bindable var prefs = model.prefs
@@ -68,6 +69,24 @@ struct GeneralSettings: View {
             Toggle("Open at login", isOn: Binding(get: { model.launchAtLogin },
                                                   set: { model.launchAtLogin = $0 }))
             Toggle("Turn the bypass on when ZapretMac opens", isOn: $prefs.startOnLaunch)
+        }
+        Section {
+            LabeledContent("Global shortcut") {
+                ShortcutRecorder(needsModifier: $needsModifier)
+            }
+        } header: {
+            Text("Shortcut")
+        } footer: {
+            if model.globalShortcutFailed {
+                Text("Another app uses this shortcut. Choose another one.")
+                    .foregroundStyle(.red)
+            } else if needsModifier {
+                Text("Use Command, Option, or Control with the key. Press Escape to cancel.")
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Works in any app: press it to turn the bypass on or off.")
+                    .foregroundStyle(.secondary)
+            }
         }
         Section {
             LabeledContent("SOCKS port") {

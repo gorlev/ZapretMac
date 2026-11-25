@@ -206,6 +206,27 @@ enum SelfTest {
             check("the command has two profiles, each with the hostlist",
                   line.contains(" --new ") && line.components(separatedBy: "--hostlist=").count - 1 == 2, line)
 
+            // S-073
+            // The global shortcut: saved, registered system-wide, and its handler flips the bypass.
+            check("there is no global shortcut until one is recorded", model.prefs.globalShortcut == nil)
+            let hotkey = GlobalShortcut(keyCode: 111, modifiers: [.control, .option, .shift]) // ⌃⌥⇧F12
+            model.setGlobalShortcut(hotkey)
+            check("the global shortcut is saved", Prefs.savedShortcut(in: model.prefs.defaults) == hotkey)
+            check("the global shortcut registers", !model.globalShortcutFailed && GlobalHotKey.shared.registered == hotkey,
+                  "\(String(describing: GlobalHotKey.shared.registered))")
+            for _ in 0..<30 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+            let wasRunning = model.engine.state == .running
+            GlobalHotKey.shared.fire(GlobalHotKey.bypassID)
+            check("the shortcut turns the bypass off", wasRunning && model.engine.state == .stopped, "\(model.engine.state)")
+            check("the shortcut shows the HUD", BypassHUD.shared.window?.isVisible == true)
+            GlobalHotKey.shared.fire(GlobalHotKey.bypassID)
+            for _ in 0..<30 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+            check("the shortcut turns the bypass back on", model.engine.state == .running, "\(model.engine.state)")
+            model.setGlobalShortcut(nil)
+            check("removing the shortcut unregisters it", GlobalHotKey.shared.registered == nil && model.prefs.globalShortcut == nil
+                  && Prefs.savedShortcut(in: model.prefs.defaults) == nil)
+            BypassHUD.shared.hide()
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 

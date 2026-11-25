@@ -98,16 +98,19 @@ struct StatusDot: View {
 
 extension Engine {
     /// The menu bar shield: on, off, or a warning after a failure.
-    var menuBarSymbol: String {
-        switch state {
+    var menuBarSymbol: String { state.symbol }
+}
+
+extension Engine.State {
+    /// The shield for this state, in the menu bar and the global shortcut's HUD.
+    var symbol: String {
+        switch self {
         case .running, .starting: "shield.lefthalf.filled"
         case .stopped: "shield.slash"
         case .failed: "exclamationmark.shield"
         }
     }
-}
 
-extension Engine.State {
     var title: String {
         switch self {
         case .stopped: String(localized: "Off")

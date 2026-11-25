@@ -39,6 +39,18 @@ enum Snapshot {
                     capture(to: "\(dir)/\(page.rawValue)-\(mode).png")
                 }
             }
+            // The global shortcut's HUD (S-073), on and off. "hud" takes only this.
+            if only == nil || only?.contains("extras") == true || only?.contains("hud") == true {
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    for state in [Engine.State.running, .stopped] {
+                        BypassHUD.shared.show(state: state)
+                        try? await Task.sleep(for: .seconds(0.5))
+                        capture(to: "\(dir)/hud-\(state == .running ? "on" : "off")-\(mode).png", window: BypassHUD.shared.window)
+                    }
+                }
+                BypassHUD.shared.hide()
+            }
             // The strategy editor sheet, then Overview with the bypass off.
             if only == nil || only?.contains("extras") == true {
                 let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
@@ -87,6 +99,10 @@ enum Snapshot {
             }
             if only == nil || only?.contains("settings") == true {
                 let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
+                // A sample shortcut in the test suite, shown but never registered.
+                if model.prefs.globalShortcut == nil {
+                    model.prefs.globalShortcut = GlobalShortcut(keyCode: 11, modifiers: [.control, .option])
+                }
                 openSettings()
                 try? await Task.sleep(for: .seconds(1))
                 for mode in ["light", "dark"] {
