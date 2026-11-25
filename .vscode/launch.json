@@ -19,6 +19,26 @@
             "target": "ZapretMac",
             "configuration": "release",
             "preLaunchTask": "swift: Build Release ZapretMac"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:ZapretMac}",
+            "name": "Debug ZapretMacHelper",
+            "target": "ZapretMacHelper",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug ZapretMacHelper"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:ZapretMac}",
+            "name": "Release ZapretMacHelper",
+            "target": "ZapretMacHelper",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release ZapretMacHelper"
         }
     ]
 }

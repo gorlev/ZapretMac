@@ -201,7 +201,7 @@ As the user, I turn on Transparent mode once and approve ZapretMac's helper in S
 Acceptance:
 - [manual] Approving the helper in System Settings lets ZapretMac reach it; removing it turns Transparent mode off.
 - [self] The app reports the helper's state (not installed, needs approval, ready).
-Status: todo
+Status: done
 
 ### S-081 Bypass without any proxy setting
 As the user, in Transparent mode every app's traffic to ports 80 and 443 goes through tpws without a proxy: the helper runs tpws as root with `--port … --user=root` and pf `rdr`/`route-to` rules, as zapret's macOS install does.
