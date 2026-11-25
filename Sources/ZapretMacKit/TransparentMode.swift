@@ -22,15 +22,19 @@ public enum HelperInfo {
     public static let anchor = "com.apple/zapretmac"
 
     /// What the helper always puts before the app's tpws arguments.
+    /// tpws listens on 127.0.0.1 for IPv4 and on lo0's link-local address
+    /// (fe80::1) for IPv6, as zapret's macOS setup does. Each --bind-* starts
+    /// a new bind, so --bind-linklocal belongs to the lo0 one.
     public static func fixedTPWSArguments(port: Int) -> [String] {
-        ["--user=root", "--port=\(port)", "--bind-addr=127.0.0.1"]
+        ["--user=root", "--port=\(port)", "--bind-addr=127.0.0.1", "--bind-iface6=lo0", "--bind-linklocal=force"]
     }
 }
 
 /// The pf anchor text for transparent mode, after zapret's macOS setup:
 /// traffic to the web ports that does not come from root is routed to lo0
 /// and redirected to tpws. tpws runs as root, so its own traffic is exempt
-/// and does not loop. IPv4 only for now.
+/// and does not loop. IPv6 traffic goes to tpws on lo0's link-local
+/// address fe80::1 (zapret's `pf_anchor_zapret_v6_tpws`).
 public enum PFRules {
     public static let defaultPorts = [80, 443]
 
@@ -39,6 +43,8 @@ public enum PFRules {
         return """
         rdr pass on lo0 inet proto tcp from !127.0.0.0/8 to any port \(list) -> 127.0.0.1 port \(port)
         pass out route-to (lo0 127.0.0.1) inet proto tcp from any to any port \(list) user { >root }
+        rdr pass on lo0 inet6 proto tcp from !::1 to any port \(list) -> fe80::1 port \(port)
+        pass out route-to (lo0 fe80::1) inet6 proto tcp from any to any port \(list) user { >root }
 
         """
     }

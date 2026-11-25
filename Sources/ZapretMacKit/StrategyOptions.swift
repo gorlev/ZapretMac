@@ -28,6 +28,20 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
 
     /// --filter-tcp, e.g. "80,443". Empty means every port.
     public var tcpPorts = ""
+
+    // Advanced
+    /// What `--disorder` applies to: `--disorder`, `--disorder=http`, or `--disorder=tls`.
+    public var disorderScope = ProtocolScope.all
+    /// What `--oob` applies to: `--oob`, `--oob=http`, or `--oob=tls`.
+    public var oobScope = ProtocolScope.all
+    /// --oob-data, one character or 0xHEX, e.g. "0x01". Empty means tpws's 0x00.
+    public var oobData = ""
+    /// --filter-l7, e.g. "http,tls". Empty means every protocol.
+    public var protocolFilter = ""
+    /// --tamper-start, e.g. "n2" (data block 2) or "100" (byte 100). Empty means from the start.
+    public var tamperStart = ""
+    /// --tamper-cutoff, e.g. "n2". Empty means no end.
+    public var tamperCutoff = ""
     /// Flags the form does not cover, kept as written.
     public var extra: [String] = []
 
@@ -53,7 +67,14 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
         ("--filter-tcp", \.tcpPorts),
         ("--hostspell", \.hostSpell),
         ("--hostpad", \.hostPad),
+        ("--oob-data", \.oobData),
+        ("--filter-l7", \.protocolFilter),
+        ("--tamper-start", \.tamperStart),
+        ("--tamper-cutoff", \.tamperCutoff),
     ]
+
+    /// Fields tpws reads once: a second copy stays in `extra` as written.
+    private static let singleValues: Set<String> = ["--oob-data", "--filter-l7", "--tamper-start", "--tamper-cutoff"]
 
     /// The tpws flags, in a stable order.
     public var arguments: [String] {
@@ -61,9 +82,19 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
         if !tcpPorts.trimmed.isEmpty { out.append("--filter-tcp=\(tcpPorts.compact)") }
         if !tlsRecord.trimmed.isEmpty { out.append("--tlsrec=\(tlsRecord.compact)") }
         if !splitPositions.trimmed.isEmpty { out.append("--split-pos=\(splitPositions.compact)") }
-        for (flag, path) in Self.flags where self[keyPath: path] { out.append(flag) }
+        for (flag, path) in Self.flags where self[keyPath: path] {
+            switch flag {
+            case "--disorder": out.append(disorderScope.flag(flag))
+            case "--oob": out.append(oobScope.flag(flag))
+            default: out.append(flag)
+            }
+        }
         if !hostSpell.trimmed.isEmpty { out.append("--hostspell=\(hostSpell.trimmed)") }
         if !hostPad.trimmed.isEmpty { out.append("--hostpad=\(hostPad.compact)") }
+        if !oobData.trimmed.isEmpty { out.append("--oob-data=\(oobData.compact)") }
+        if !protocolFilter.trimmed.isEmpty { out.append("--filter-l7=\(protocolFilter.compact)") }
+        if !tamperStart.trimmed.isEmpty { out.append("--tamper-start=\(tamperStart.compact)") }
+        if !tamperCutoff.trimmed.isEmpty { out.append("--tamper-cutoff=\(tamperCutoff.compact)") }
         out.append(contentsOf: extra)
         return out
     }
@@ -80,14 +111,34 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
             }
             let parts = arg.split(separator: "=", maxSplits: 1).map(String.init)
             let name = parts[0]
-            if parts.count == 2, let path = Self.values.first(where: { $0.0 == name })?.1 {
+            if parts.count == 2, let path = Self.values.first(where: { $0.0 == name })?.1,
+               !(Self.singleValues.contains(name) && !self[keyPath: path].isEmpty) {
                 self[keyPath: path] = parts[1]
+            } else if name == "--disorder" || name == "--oob", readScoped(name, value: parts.count == 2 ? parts[1] : nil) {
+                continue
             } else if parts.count == 1, let path = Self.flags.first(where: { $0.0 == name })?.1 {
                 self[keyPath: path] = true
             } else {
                 extra.append(arg)
             }
         }
+    }
+
+    /// --disorder, --disorder=http, --disorder=tls (and the same for --oob).
+    /// False for a second copy or a value tpws does not know: it stays in extra.
+    private mutating func readScoped(_ name: String, value: String?) -> Bool {
+        guard let scope = value.map(ProtocolScope.init(rawValue:)) ?? .all,
+              value == nil || scope != .all else { return false }
+        if name == "--disorder" {
+            if disorder { return false }
+            disorder = true
+            disorderScope = scope
+        } else {
+            if oob { return false }
+            oob = true
+            oobScope = scope
+        }
+        return true
     }
 
     /// Reads a command-line string such as "--split-pos=1 --disorder".
@@ -110,6 +161,32 @@ public struct StrategyOptions: Equatable, Sendable, Codable {
         if http > 0 { parts.append(String(localized: "\(http) HTTP tricks", bundle: .main)) }
         if !extra.isEmpty { parts.append(String(localized: "+\(extra.count) more", bundle: .main)) }
         return parts.isEmpty ? String(localized: "No changes to traffic", bundle: .main) : parts.joined(separator: " · ")
+    }
+}
+
+/// Which traffic `--disorder` or `--oob` applies to.
+public enum ProtocolScope: String, CaseIterable, Sendable, Codable {
+    case all, http, tls
+
+    /// "--disorder", "--disorder=http", "--disorder=tls".
+    func flag(_ name: String) -> String { self == .all ? name : "\(name)=\(rawValue)" }
+}
+
+/// The protocols `--filter-l7` can pick.
+public enum L7Protocol: String, CaseIterable, Sendable {
+    case http, tls, unknown
+}
+
+extension StrategyOptions {
+    /// Whether --filter-l7 names this protocol. An empty filter names none (and means all).
+    public func filters(_ proto: L7Protocol) -> Bool {
+        protocolFilter.compact.split(separator: ",").contains { $0 == proto.rawValue }
+    }
+
+    /// Adds or removes a protocol from --filter-l7, in tpws's order (http, tls, unknown).
+    public mutating func setFilter(_ proto: L7Protocol, _ on: Bool) {
+        let chosen = L7Protocol.allCases.filter { $0 == proto ? on : filters($0) }
+        protocolFilter = chosen.map(\.rawValue).joined(separator: ",")
     }
 }
 

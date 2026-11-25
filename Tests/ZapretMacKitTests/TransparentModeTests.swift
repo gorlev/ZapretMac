@@ -14,6 +14,8 @@ struct TransparentModeTests {
         #expect(PFRules.anchorText(port: 1088) == """
         rdr pass on lo0 inet proto tcp from !127.0.0.0/8 to any port {80,443} -> 127.0.0.1 port 1088
         pass out route-to (lo0 127.0.0.1) inet proto tcp from any to any port {80,443} user { >root }
+        rdr pass on lo0 inet6 proto tcp from !::1 to any port {80,443} -> fe80::1 port 1088
+        pass out route-to (lo0 fe80::1) inet6 proto tcp from any to any port {80,443} user { >root }
 
         """)
         #expect(PFRules.anchorText(port: 2000, ports: [443]).contains("port {443} -> 127.0.0.1 port 2000"))

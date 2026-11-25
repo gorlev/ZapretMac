@@ -71,8 +71,34 @@ struct StrategyEditor: View {
                 }
                 Section {
                     TextField("Only these ports", text: $draft.options.tcpPorts, prompt: Text("80,443"))
+                    LabeledContent("Only these protocols") {
+                        HStack(spacing: Space.md) {
+                            Toggle("HTTP", isOn: protocolBinding(.http))
+                            Toggle("TLS", isOn: protocolBinding(.tls))
+                            Toggle("Other", isOn: protocolBinding(.unknown))
+                        }
+                        .toggleStyle(.checkbox)
+                    }
+                    .help("Change only connections of these protocols. Other means anything that is not HTTP or TLS. None checked means every protocol.")
+                    Picker("Disorder applies to", selection: $draft.options.disorderScope) {
+                        scopeOptions
+                    }
+                    .disabled(!draft.options.disorder)
+                    .help("Send pieces out of order for every protocol, or only for HTTP or only for TLS. Turn on disorder under Splitting first.")
+                    Picker("Out-of-band byte applies to", selection: $draft.options.oobScope) {
+                        scopeOptions
+                    }
+                    .disabled(!draft.options.oob)
+                    .help("Add the out-of-band byte for every protocol, or only for HTTP or only for TLS. Turn on oob under Splitting first.")
+                    TextField("Out-of-band byte value", text: $draft.options.oobData, prompt: Text(verbatim: "0x00"))
+                        .disabled(!draft.options.oob)
+                        .help("The byte to send out of band: one character, or 0x and two hex digits. Leave empty for 0x00.")
+                    TextField("Start changing at", text: $draft.options.tamperStart, prompt: Text(verbatim: "0"))
+                        .help("Leave a connection alone until this point. A number is a byte offset in what the Mac sends; n and a number is a data block, for example n2.")
+                    TextField("Stop changing after", text: $draft.options.tamperCutoff, prompt: Text(verbatim: "n2"))
+                        .help("Stop changing a connection after this point. A number is a byte offset; n and a number is a data block, for example n2. Leave empty to never stop.")
                     LabeledContent("More tpws flags") {
-                        TextField("More tpws flags", text: $extraText, prompt: Text("--tamper-cutoff=n2"), axis: .vertical)
+                        TextField("More tpws flags", text: $extraText, prompt: Text(verbatim: "--hostlist-domains=example.com"), axis: .vertical)
                             .labelsHidden()
                             .font(.body.monospaced())
                             .multilineTextAlignment(.trailing)
@@ -133,6 +159,17 @@ struct StrategyEditor: View {
         .frame(width: 560)
         .noInitialFocus()
         .onChange(of: options) { check = nil }
+    }
+
+    @ViewBuilder private var scopeOptions: some View {
+        Text("Every protocol").tag(ProtocolScope.all)
+        Text("HTTP only").tag(ProtocolScope.http)
+        Text("TLS only").tag(ProtocolScope.tls)
+    }
+
+    private func protocolBinding(_ proto: L7Protocol) -> Binding<Bool> {
+        Binding(get: { draft.options.filters(proto) },
+                set: { draft.options.setFilter(proto, $0) })
     }
 
     private func pasteFlags() {
