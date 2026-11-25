@@ -84,9 +84,11 @@ struct FinderSheet: View {
                 List(finder.ranked) { trial in
                     TrialRow(trial: trial) {
                         if trial.isScan {
-                            Button("Save as Strategy…") { model.saveScanRow(trial) }
+                            // Short label so it never truncates; the full name is in the
+                            // context menu and the tooltip.
+                            Button("Save") { model.saveScanRow(trial) }
                                 .controlSize(.small)
-                                .help("Open the strategy editor with these flags")
+                                .help("Save as Strategy…")
                         } else {
                             UseButton(inUse: model.prefs.strategyID == trial.id) { model.choose(strategy: trial.id) }
                         }
@@ -194,17 +196,17 @@ private struct TrialRow<Action: View>: View {
                         .truncationMode(.middle)
                 }
             }
-            .layoutPriority(1)
             Spacer(minLength: Space.sm)
             switch trial.status {
             case .waiting: EmptyView()
             case .testing: Text("Testing…").foregroundStyle(.secondary)
             case .works(let ms):
-                Text("\(ms) ms").foregroundStyle(.secondary).monospacedDigit()
-                action()
+                // The time and the button keep their size; the name truncates.
+                Text("\(ms) ms").foregroundStyle(.secondary).monospacedDigit().fixedSize()
+                action().fixedSize()
             case .fails(let reason):
                 if trial.isPartial {
-                    Text("Opened \(trial.openCount) of \(trial.sites.count)").foregroundStyle(.secondary).monospacedDigit()
+                    Text("Opened \(trial.openCount) of \(trial.sites.count)").foregroundStyle(.secondary).monospacedDigit().fixedSize()
                 } else {
                     Text(reason).foregroundStyle(.secondary).lineLimit(1)
                 }
