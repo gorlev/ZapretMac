@@ -90,7 +90,7 @@ struct ZapretMacApp: App {
             Image(systemName: model.engine.menuBarSymbol)
                 .accessibilityLabel(model.engine.state.title)
         }
-        .menuBarExtraStyle(.menu)
+        .menuBarExtraStyle(.window)
 
         Settings {
             SettingsView()

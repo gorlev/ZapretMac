@@ -100,14 +100,17 @@ private struct Hero: View {
     }
 }
 
-/// The large round on/off switch.
+/// The round on/off switch: large on the Overview page, smaller in the
+/// menu bar panel. Rings, glow, and symbol scale with `size`.
 struct PowerButton: View {
     let state: Engine.State
+    var size: CGFloat = 148
     let action: () -> Void
     @State private var hovering = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private let size: CGFloat = 148
+    /// 1 at the Overview size.
+    private var scale: CGFloat { size / 148 }
 
     var body: some View {
         Button(action: action) {
@@ -115,25 +118,25 @@ struct PowerButton: View {
                 // Soft halo while on.
                 Circle()
                     .fill(Palette.accent.opacity(isOn ? 0.18 : 0))
-                    .frame(width: size + 48, height: size + 48)
-                    .blur(radius: 12)
+                    .frame(width: size + 48 * scale, height: size + 48 * scale)
+                    .blur(radius: 12 * scale)
                 Circle()
                     .strokeBorder(isOn ? AnyShapeStyle(Palette.accent.opacity(0.35)) : AnyShapeStyle(.quaternary),
-                                  lineWidth: 8)
-                    .frame(width: size + 24, height: size + 24)
+                                  lineWidth: 8 * scale)
+                    .frame(width: size + 24 * scale, height: size + 24 * scale)
                 Circle()
                     .fill(fill)
                     .frame(width: size, height: size)
                     .shadow(color: isOn ? Palette.accent.opacity(0.45) : .black.opacity(0.12),
-                            radius: isOn ? 20 : 8, y: isOn ? 8 : 4)
+                            radius: (isOn ? 20 : 8) * scale, y: (isOn ? 8 : 4) * scale)
                     .overlay(Circle().strokeBorder(.white.opacity(isOn ? 0.25 : 0.08), lineWidth: 1))
                 if state == .starting {
                     ProgressView()
-                        .controlSize(.large)
+                        .controlSize(scale < 1 ? .regular : .large)
                         .tint(Palette.onAccent)
                 } else {
                     Image(systemName: "power")
-                        .font(.system(size: 52, weight: .semibold))
+                        .font(.system(size: 52 * scale, weight: .semibold))
                         .foregroundStyle(isOn ? AnyShapeStyle(Palette.onAccent) : AnyShapeStyle(.secondary))
                         .contentTransition(.symbolEffect(.replace))
                 }

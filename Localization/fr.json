@@ -459,5 +459,7 @@
   "IP addresses blocked in Russia, joined into /24 ranges.": "Adresses IP bloquées en Russie, regroupées en plages /24.",
   "IP addresses blocked in Russia, joined into ranges from /32 to /22.": "Adresses IP bloquées en Russie, regroupées en plages de /32 à /22.",
   "Works in browsers; some older apps may not get through.": "Fonctionne dans les navigateurs ; certaines apps anciennes peuvent ne pas passer.",
-  "This strategy works with TLS 1.3, which browsers use, but not with TLS 1.2, which some older apps still use.": "Cette stratégie fonctionne avec TLS 1.3, utilisé par les navigateurs, mais pas avec TLS 1.2, que certaines apps anciennes utilisent encore."
+  "This strategy works with TLS 1.3, which browsers use, but not with TLS 1.2, which some older apps still use.": "Cette stratégie fonctionne avec TLS 1.3, utilisé par les navigateurs, mais pas avec TLS 1.2, que certaines apps anciennes utilisent encore.",
+  "SOCKS5 127.0.0.1:%@ · %@": "SOCKS5 127.0.0.1:%@ · %@",
+  "Transparent mode · %@": "Mode transparent · %@"
 }

@@ -51,6 +51,48 @@ enum Snapshot {
                 }
                 BypassHUD.shared.hide()
             }
+            // The menu bar panel, on and off, in a window like the panel's.
+            // "menubar" takes only this.
+            if only == nil || only?.contains("extras") == true || only?.contains("menubar") == true {
+                let panel = NSWindow(contentRect: NSRect(x: 200, y: 200, width: 320, height: 480),
+                                     styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
+                panel.titlebarAppearsTransparent = true
+                panel.titleVisibility = .hidden
+                for button in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+                    panel.standardWindowButton(button)?.isHidden = true
+                }
+                let blur = NSVisualEffectView()
+                blur.material = .popover
+                blur.state = .active
+                let host = NSHostingView(rootView: MenuBarContent().environment(model).modelContainer(model.container).ignoresSafeArea())
+                host.translatesAutoresizingMaskIntoConstraints = false
+                blur.addSubview(host)
+                NSLayoutConstraint.activate([host.topAnchor.constraint(equalTo: blur.topAnchor),
+                                             host.bottomAnchor.constraint(equalTo: blur.bottomAnchor),
+                                             host.leadingAnchor.constraint(equalTo: blur.leadingAnchor),
+                                             host.trailingAnchor.constraint(equalTo: blur.trailingAnchor)])
+                panel.contentView = blur
+                panel.setContentSize(host.fittingSize)
+                let wasOn = model.engine.isOn
+                for state in ["on", "off"] {
+                    if state == "off" { model.turnOff() } else if !model.engine.isOn { model.turnOn() }
+                    for _ in 0..<50 where model.engine.isOn != (state == "on") || model.engine.state == .starting {
+                        try? await Task.sleep(for: .milliseconds(100))
+                    }
+                    for mode in ["light", "dark"] {
+                        NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                        try? await Task.sleep(for: .seconds(0.6))
+                        host.layoutSubtreeIfNeeded()
+                        panel.setContentSize(NSSize(width: 320, height: host.intrinsicContentSize.height > 0 ? host.intrinsicContentSize.height : host.fittingSize.height))
+                        capture(to: "\(dir)/menubar-\(state)-\(mode).png", window: panel)
+                    }
+                }
+                panel.orderOut(nil)
+                if wasOn {
+                    model.turnOn()
+                    for _ in 0..<50 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+                }
+            }
             // Extras. The Add Subscription sheet also runs alone with
             // APP_SNAPSHOT_PAGES=domains,subscription (the rest scans for minutes).
             if only == nil || only?.contains("extras") == true || only?.contains("subscription") == true {
