@@ -72,11 +72,15 @@ private struct Hero: View {
     }
 
     private var subline: String {
-        switch model.engine.state {
+        // S-082: Transparent mode turned itself off; say why once.
+        if let notice = model.transparentNotice, !failed { return notice }
+        return switch model.engine.state {
         case .stopped:
             String(localized: "Click the switch to open blocked sites with \(model.activeStrategy.name).")
         case .starting:
             String(localized: "Starting tpws on port \(String(model.prefs.port)).")
+        case .running where model.prefs.transparentMode:
+            String(localized: "Every app's web traffic now goes through \(model.activeStrategy.name). No proxy settings needed.")
         case .running:
             model.prefs.useSystemProxy && model.proxy.isApplied
                 ? (model.proxyMode == .pac
@@ -197,6 +201,7 @@ private struct StatTile: View {
 
 private struct SetupCard: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.openSettings) private var openSettings
     @Query private var domains: [DomainEntry]
 
     private var includeCount: Int { domains.filter { !$0.isExcluded && $0.isEnabled }.count }
@@ -224,19 +229,35 @@ private struct SetupCard: View {
                 .fixedSize()
             }
             Divider().padding(.leading, 48)
-            CardRow(title: "System proxy", symbol: "point.3.connected.trianglepath.dotted",
-                    caption: prefs.useSystemProxy && model.proxyMode == .pac
-                        ? String(localized: "Only the sites in your list go through ZapretMac; others connect directly.")
-                        : String(localized: "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.")) {
-                Toggle("System proxy", isOn: Binding(get: { prefs.useSystemProxy },
-                                                    set: { prefs.useSystemProxy = $0; model.systemProxyChanged() }))
-                    .toggleStyle(.switch)
-                    .labelsHidden()
-                    .disabled(model.proxy.isBusy)
+            if prefs.transparentMode {
+                CardRow(title: "Transparent mode", symbol: "arrow.triangle.branch",
+                        caption: String(localized: "On in Settings > Advanced. Apps need no proxy settings.")) {
+                    Button("Settings…") {
+                        model.settingsTab = .advanced
+                        openSettings()
+                    }
+                    .help("Open Settings > Advanced")
+                }
+            } else {
+                systemProxyRow
             }
         }
         .card()
         .gridProbe("setup", area: "overview")
+    }
+
+    private var systemProxyRow: some View {
+        let prefs = model.prefs
+        return CardRow(title: "System proxy", symbol: "point.3.connected.trianglepath.dotted",
+                       caption: prefs.useSystemProxy && model.proxyMode == .pac
+                           ? String(localized: "Only the sites in your list go through ZapretMac; others connect directly.")
+                           : String(localized: "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.")) {
+            Toggle("System proxy", isOn: Binding(get: { prefs.useSystemProxy },
+                                                set: { prefs.useSystemProxy = $0; model.systemProxyChanged() }))
+                .toggleStyle(.switch)
+                .labelsHidden()
+                .disabled(model.proxy.isBusy)
+        }
     }
 }
 

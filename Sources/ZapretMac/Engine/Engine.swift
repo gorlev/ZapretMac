@@ -26,7 +26,7 @@ final class Engine {
     var isOn: Bool { state == .running || state == .starting }
 
     /// Starts and stops tpws. Local by default; the self-test passes a fake.
-    @ObservationIgnored private let runner: any TPWSRunner
+    @ObservationIgnored private(set) var runner: any TPWSRunner
     private var handle: (any TPWSHandle)?
     private var nextID = 0
     /// Bumped on every start and stop, so output and exits from an old
@@ -86,6 +86,14 @@ final class Engine {
                 try? await Task.sleep(for: plan.interval)
             }
         }
+    }
+
+    /// Runs tpws another way from now on (S-081: local SOCKS or the root
+    /// helper). Stops a running tpws first; the caller starts it again.
+    func use(_ runner: any TPWSRunner) {
+        stop()
+        self.runner = runner
+        restarts = TPWSRestartPolicy()
     }
 
     func stop() {

@@ -18,7 +18,7 @@ final class Transparent: @unchecked Sendable {
 
     /// What tpws always gets from the helper, before the app's arguments.
     static func fixedArguments(port: Int) -> [String] {
-        ["--user=root", "--port=\(port)", "--bind-addr=127.0.0.1"]
+        HelperInfo.fixedTPWSArguments(port: port)
     }
 
     func status() -> HelperStatus {

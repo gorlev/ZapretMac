@@ -84,7 +84,11 @@ struct StrategyDraft: Identifiable {
 @Observable
 final class AppModel {
     let container: ModelContainer
-    let engine = Engine()
+    let engine: Engine
+    /// The root helper for Transparent mode (S-080, S-081).
+    let helper = HelperClient.shared
+    /// Why Transparent mode was turned off by itself (S-082), shown once in the Hero.
+    var transparentNotice: String?
     let prefs = Prefs.shared
     let proxy: SystemProxy
     /// Serves the PAC file while the system proxy is in PAC mode (S-072).
@@ -118,6 +122,7 @@ final class AppModel {
     init(container: ModelContainer) {
         self.container = container
         proxy = SystemProxy(defaults: Prefs.shared.defaults)
+        engine = Engine(runner: Self.runner(transparent: Prefs.shared.transparentMode, helper: HelperClient.shared))
         engine.onFailure = { [weak self] reason in
             guard let self else { return }
             // Nothing listens on the port now: give apps their old proxy back.
@@ -295,7 +300,8 @@ final class AppModel {
         return TPWSCommand(port: prefs.port, strategy: activeStrategy.arguments, scope: prefs.scope,
                            hostlistPath: Store.hostlistURL.path,
                            excludePath: exclude ? Store.excludeURL.path : nil,
-                           debug: prefs.verboseLog, pidFile: Store.pidURL.path)
+                           debug: prefs.verboseLog, pidFile: Store.pidURL.path,
+                           mode: prefs.transparentMode ? .transparent : .socks)
     }
 
     func toggle() {
@@ -332,16 +338,83 @@ final class AppModel {
     }
 
     func turnOn() {
+        transparentNotice = nil
         writeLists()
         engine.start(command)
-        if prefs.useSystemProxy, !proxy.isApplied {
+        if prefs.transparentMode {
+            // Apps need no proxy in Transparent mode: give them their own settings back.
+            if proxy.isApplied || pacServer.isRunning { Task { await releaseProxy() } }
+        } else if prefs.useSystemProxy, !proxy.isApplied {
             Task { await applyProxy() }
         }
     }
 
     func turnOff() {
+        transparentNotice = nil
         engine.stop()
         if proxy.isApplied || pacServer.isRunning { Task { await releaseProxy() } }
+    }
+
+    // MARK: - Transparent mode (S-081, S-082)
+
+    static func runner(transparent: Bool, helper: HelperClient) -> any TPWSRunner {
+        transparent ? HelperTPWSRunner(caller: helper.caller) : LocalTPWSRunner()
+    }
+
+    /// Turns Transparent mode on or off. Turning it on needs the helper ready.
+    /// While running, tpws stops, the engine swaps its runner, and starts again.
+    @discardableResult
+    func setTransparentMode(_ on: Bool) -> Bool {
+        if on, helper.state != .ready { return false }
+        transparentNotice = nil
+        switchMode(transparent: on)
+        return true
+    }
+
+    private func switchMode(transparent on: Bool) {
+        let wasOn = engine.isOn
+        prefs.transparentMode = on
+        engine.use(Self.runner(transparent: on, helper: helper))
+        if wasOn {
+            turnOn()
+        } else if on, proxy.isApplied || pacServer.isRunning {
+            Task { await releaseProxy() }
+        }
+    }
+
+    /// S-082: the helper was removed or needs approval again while Transparent
+    /// mode is on. Fall back to the local SOCKS proxy and say why, once.
+    func checkHelper() {
+        guard prefs.transparentMode, helper.state != .ready else { return }
+        // A removed helper also takes tpws with it, and the restart through it
+        // fails: run locally again whenever the bypass was meant to be on.
+        let failed = if case .failed = engine.state { true } else { false }
+        let wanted = engine.isOn || failed
+        switchMode(transparent: false)
+        if wanted, !engine.isOn { turnOn() }
+        transparentNotice = String(localized: "Transparent mode is off because the helper is no longer installed. ZapretMac uses the SOCKS proxy again.")
+    }
+
+    /// Looks at the helper's state every few seconds while Transparent mode is
+    /// on: removing it in System Settings never calls back.
+    func startHelperWatch() {
+        Task { [weak self] in
+            while let self {
+                if prefs.transparentMode {
+                    helper.refresh()
+                    checkHelper()
+                }
+                try? await Task.sleep(for: .seconds(3))
+            }
+        }
+    }
+
+    /// S-082, at launch: a force-quit app can leave pf rules behind. The helper
+    /// removes them when the app's connection drops; this makes sure.
+    func cleanUpHelperAtLaunch() async {
+        helper.refresh()
+        guard helper.state == .ready, !engine.isOn else { return }
+        _ = await helper.caller.cleanUp()
     }
 
     func restartIfRunning() {
@@ -352,7 +425,7 @@ final class AppModel {
     }
 
     func systemProxyChanged() {
-        guard engine.isOn else { return }
+        guard engine.isOn, !prefs.transparentMode else { return }
         Task {
             if prefs.useSystemProxy { await applyProxy() } else { await releaseProxy() }
         }
@@ -424,7 +497,8 @@ final class AppModel {
         guard let url = SiteCheck.url(from: prefs.testURL) else { return }
         isChecking = true
         check = nil
-        let port = engine.state == .running ? prefs.port : nil
+        // In Transparent mode tpws is no SOCKS proxy: every fetch already goes through it.
+        let port = engine.state == .running && !prefs.transparentMode ? prefs.port : nil
         Task {
             let result = await SiteCheck.run(url, port: port)
             check = result

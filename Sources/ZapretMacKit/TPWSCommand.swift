@@ -5,8 +5,18 @@ public enum Scope: String, CaseIterable, Sendable, Codable {
     case allSites, listOnly
 }
 
-/// Builds the full tpws argument list for SOCKS mode.
+/// Builds the full tpws argument list: SOCKS mode, or the part of a
+/// Transparent mode command that the app sends to the root helper.
 public struct TPWSCommand: Equatable, Sendable {
+    /// How tpws is reached.
+    public enum Mode: String, Sendable {
+        /// A SOCKS proxy on 127.0.0.1, run by the app as the user.
+        case socks
+        /// Run as root by the helper with pf rules (S-081). The helper adds the
+        /// port, address, and user itself and refuses them from the app.
+        case transparent
+    }
+
     public var port: Int
     public var strategy: [String]
     public var scope: Scope
@@ -16,11 +26,13 @@ public struct TPWSCommand: Equatable, Sendable {
     public var excludePath: String?
     public var debug = true
     /// tpws writes its process id here, so a tpws left behind by a crash can be found.
+    /// SOCKS mode only: the helper tracks its own tpws.
     public var pidFile: String?
+    public var mode: Mode
 
     public init(port: Int, strategy: [String], scope: Scope,
                 hostlistPath: String? = nil, excludePath: String? = nil, debug: Bool = true,
-                pidFile: String? = nil) {
+                pidFile: String? = nil, mode: Mode = .socks) {
         self.port = port
         self.strategy = strategy
         self.scope = scope
@@ -28,12 +40,16 @@ public struct TPWSCommand: Equatable, Sendable {
         self.excludePath = excludePath
         self.debug = debug
         self.pidFile = pidFile
+        self.mode = mode
     }
 
+    /// In Transparent mode: only strategy, list, and debug flags, which is
+    /// what `HelperArguments.problem(in:allowedFolders:)` accepts.
     public var arguments: [String] {
-        var out = ["--socks", "--bind-addr=127.0.0.1", "--port=\(port)"]
+        var out: [String] = []
+        if mode == .socks { out = ["--socks", "--bind-addr=127.0.0.1", "--port=\(port)"] }
         if debug { out.append("--debug=1") }
-        if let pidFile { out.append("--pidfile=\(pidFile)") }
+        if mode == .socks, let pidFile { out.append("--pidfile=\(pidFile)") }
         // Lists belong to a desync profile: with several profiles (`--new`),
         // every profile gets them, so My list and Never Touch apply to all.
         var lists: [String] = []
@@ -44,9 +60,11 @@ public struct TPWSCommand: Equatable, Sendable {
         return out
     }
 
-    /// For the "copy command" button: quoted where needed.
+    /// For the "copy command" button: quoted where needed. In Transparent
+    /// mode it also shows the flags the helper adds.
     public func commandLine(binary: String) -> String {
-        ([binary] + arguments).map { $0.contains(" ") ? "'\($0)'" : $0 }.joined(separator: " ")
+        let fixed = mode == .transparent ? HelperInfo.fixedTPWSArguments(port: port) : []
+        return ([binary] + fixed + arguments).map { $0.contains(" ") ? "'\($0)'" : $0 }.joined(separator: " ")
     }
 
     public static func isValidPort(_ port: Int) -> Bool { (1024...65535).contains(port) }
