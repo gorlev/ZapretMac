@@ -29,3 +29,8 @@ Symptom: in review, the one-shot XPC call that started tpws closed its connectio
 Cause: the helper treats a dropped connection as the app being gone and cleans up (S-082), so it would undo the start immediately.
 Fix: the connection that starts tpws stays open until stop; on a restart the old one closes only after the new start succeeded.
 Rule: when a peer cleans up on disconnect, the connection's lifetime is the feature's lifetime.
+
+## Transparent mode verified on the real Mac (2026-11-25)
+Not a bug: the first end-to-end run. With the helper approved, turning the mode on ran tpws as root (`--user=root --port=1088`), released the system proxy, and a `curl --noproxy '*' https://example.com` was redirected by pf to 127.0.0.1:1088 (netstat showed the Mac's LAN address connected to tpws's port) and got 200. Turning it off stopped the root tpws, brought back the user's SOCKS tpws and PAC proxy, and no further connections were redirected.
+Note: the running helper predates S-105, so it still had no IPv6 bind; macOS restarts it with the new binary after the app is reinstalled and the helper re-registered or the Mac restarts.
+Rule: a feature that changes the system is done only after one real run on a real Mac, with the before-state recorded and restored.
