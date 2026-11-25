@@ -223,7 +223,9 @@ private struct SetupCard: View {
             }
             Divider().padding(.leading, 48)
             CardRow(title: "System proxy", symbol: "point.3.connected.trianglepath.dotted",
-                    caption: String(localized: "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.")) {
+                    caption: prefs.useSystemProxy && model.proxyMode == .pac
+                        ? String(localized: "Only the sites in your list go through ZapretMac; others connect directly.")
+                        : String(localized: "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.")) {
                 Toggle("System proxy", isOn: Binding(get: { prefs.useSystemProxy },
                                                     set: { prefs.useSystemProxy = $0; model.systemProxyChanged() }))
                     .toggleStyle(.switch)

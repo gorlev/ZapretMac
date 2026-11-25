@@ -85,6 +85,21 @@ enum Snapshot {
                     capture(to: "\(dir)/overview-off-\(mode).png")
                 }
             }
+            // S-072: the System proxy caption in PAC mode (My list). Only the
+            // preference is shown on; nothing applies the system proxy here.
+            if only == nil || only?.contains("overview") == true {
+                let scope = model.prefs.scope
+                model.prefs.scope = .listOnly
+                model.prefs.useSystemProxy = true
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    model.sidebar = .overview
+                    try? await Task.sleep(for: .seconds(0.8))
+                    capture(to: "\(dir)/overview-pac-\(mode).png")
+                }
+                model.prefs.useSystemProxy = false
+                model.prefs.scope = scope
+            }
             if only == nil || only?.contains("settings") == true {
                 let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
                 openSettings()
