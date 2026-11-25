@@ -107,6 +107,8 @@ final class AppModel {
     var addSitesRequest = 0
     var check: SiteCheck.Result?
     var isChecking = false
+    /// The last site check ran in Transparent mode: its one fetch already went through tpws.
+    var checkTransparent = false
     /// The Add Subscription sheet, and which list a new subscription feeds.
     var showAddSubscription = false
     var addSubscriptionExcluded = false
@@ -499,6 +501,7 @@ final class AppModel {
         check = nil
         // In Transparent mode tpws is no SOCKS proxy: every fetch already goes through it.
         let port = engine.state == .running && !prefs.transparentMode ? prefs.port : nil
+        checkTransparent = engine.state == .running && prefs.transparentMode
         Task {
             let result = await SiteCheck.run(url, port: port)
             check = result
@@ -524,7 +527,8 @@ final class AppModel {
     /// Every strategy is tried on every site. A thorough scan picks the HTTP
     /// or HTTPS set by the first address.
     func startFinder(urls: [URL], depth: ScanDepth? = nil) {
-        guard let first = urls.first else { return }
+        // In Transparent mode pf would route the trials through the running tpws.
+        guard let first = urls.first, !prefs.transparentMode else { return }
         rememberScan(before: first)
         let depth = depth ?? finderDepth
         finderDepth = depth

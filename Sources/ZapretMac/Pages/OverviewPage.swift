@@ -354,7 +354,19 @@ private struct CheckCard: View {
                 .disabled(model.isChecking || SiteCheck.url(from: prefs.testURL) == nil)
                 .help("Open the site with and without ZapretMac (Command-T)")
             }
-            if let result = model.check {
+            if let result = model.check, model.checkTransparent {
+                // In Transparent mode there is no direct path to compare with:
+                // pf sends the check through tpws like every other app.
+                CheckRow(title: "With ZapretMac", outcome: result.direct)
+                    .padding(.top, Space.xs)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(result.direct.isOK ? String(localized: "ZapretMac opens this site in Transparent mode.")
+                                            : String(localized: "Still blocked. Try another strategy."))
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+            } else if let result = model.check {
                 VStack(spacing: Space.sm) {
                     CheckRow(title: "Without ZapretMac", outcome: result.direct)
                     if let via = result.throughZapret {

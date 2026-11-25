@@ -48,7 +48,21 @@ struct FinderSheet: View {
                     } else {
                         Button(finder.trials.isEmpty ? String(localized: "Start Test") : String(localized: "Test Again"), action: start)
                             .buttonStyle(.borderedProminent)
-                            .disabled(SiteCheck.urls(from: prefs.finderSites).isEmpty)
+                            .disabled(SiteCheck.urls(from: prefs.finderSites).isEmpty || model.prefs.transparentMode)
+                    }
+                }
+                if model.prefs.transparentMode {
+                    // pf would send the test connections through the running
+                    // tpws too, so every result would be wrong.
+                    HStack(alignment: .firstTextBaseline, spacing: Space.sm) {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                        Text("Scans need Transparent mode off: it sends the test connections through the running bypass too.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                        Button("Turn Off Transparent Mode") { _ = model.setTransparentMode(false) }
+                            .controlSize(.small)
                     }
                 }
                 if finder.direct.count == 1, let direct = finder.direct.first {

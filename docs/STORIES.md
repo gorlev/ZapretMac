@@ -209,14 +209,14 @@ Depends: S-080
 Acceptance:
 - [manual] curl without any proxy opens a blocked site in Transparent mode.
 - [self] Turning off removes ZapretMac's pf anchor and stops tpws.
-Status: todo
+Status: done
 
 ### S-082 Recover pf after a crash
 As the user, if ZapretMac or the helper quits unexpectedly in Transparent mode, the pf rules are removed so my internet keeps working.
 Depends: S-081
 Acceptance:
 - [manual] Killing ZapretMac while on leaves no ZapretMac pf rules after the next launch.
-Status: todo
+Status: done
 
 ## Dropped
 - Accounts, sync, telemetry: a local tool for one person.
