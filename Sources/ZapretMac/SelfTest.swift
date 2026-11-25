@@ -333,6 +333,41 @@ enum SelfTest {
                 await waitRunning()
             }
 
+            // S-080
+            // The privileged helper ships inside the app. It is never registered,
+            // and never run as root here: only its print and check modes run.
+            let contents = Bundle.main.bundleURL.appending(path: "Contents")
+            let helperBinary = Bundle.main.bundleURL.appending(path: HelperInfo.bundleProgram)
+            check("the helper is inside the app", FileManager.default.isExecutableFile(atPath: helperBinary.path), helperBinary.path)
+            let daemonPlist = contents.appending(path: "Library/LaunchDaemons/\(HelperInfo.plistName)")
+            let plist = (try? Data(contentsOf: daemonPlist))
+                .flatMap { try? PropertyListSerialization.propertyList(from: $0, format: nil) as? [String: Any] } ?? [:]
+            check("the LaunchDaemon plist names the helper and its service",
+                  plist["Label"] as? String == HelperInfo.machServiceName
+                  && plist["BundleProgram"] as? String == HelperInfo.bundleProgram
+                  && (plist["MachServices"] as? [String: Any])?[HelperInfo.machServiceName] != nil
+                  && (plist["AssociatedBundleIdentifiers"] as? [String]) == [HelperInfo.appBundleID], "\(plist)")
+            let rules = runTool(helperBinary, ["--print-rules", "1088"])
+            check("the helper prints the pf rules for its anchor",
+                  rules.status == 0 && rules.output.contains("anchor: \(HelperInfo.anchor)")
+                  && rules.output.contains("rdr pass on lo0 inet proto tcp from !127.0.0.0/8 to any port {80,443} -> 127.0.0.1 port 1088")
+                  && rules.output.contains("pass out route-to (lo0 127.0.0.1) inet proto tcp from any to any port {80,443} user { >root }"),
+                  rules.output)
+            check("the helper runs tpws from its own app as root on 127.0.0.1",
+                  rules.output.contains("tpws: \(Engine.binaryURL.path) --user=root --port=1088 --bind-addr=127.0.0.1"), rules.output)
+            let refused = runTool(helperBinary, ["--validate", "--user=nobody"])
+            check("the helper refuses --user", refused.status == 1 && refused.output.hasPrefix("refused"), refused.output)
+            let allowed = runTool(helperBinary, ["--validate"] + model.command.arguments.filter { !$0.hasPrefix("--socks")
+                && !$0.hasPrefix("--port") && !$0.hasPrefix("--bind-addr") && !$0.hasPrefix("--pidfile") })
+            check("the helper accepts the app's strategy and list flags", allowed.status == 0, allowed.output)
+            let requirement = runTool(helperBinary, ["--requirement"])
+            check("the helper only accepts ZapretMac signed by its team",
+                  requirement.status == 0 && requirement.output.contains("identifier \"\(HelperInfo.appBundleID)\""), requirement.output)
+            HelperClient.shared.refresh()
+            print("INFO helper state on this Mac: \(HelperClient.shared.state)")
+            check("the app reports the helper's state without installing it",
+                  [.notInstalled, .needsApproval, .ready, .notFound].contains(HelperClient.shared.state))
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 
@@ -352,6 +387,20 @@ enum SelfTest {
             return (0, "", "")
         }
         return (http.statusCode, http.value(forHTTPHeaderField: "Content-Type") ?? "", String(decoding: data, as: UTF8.self))
+    }
+
+    /// Runs a command line tool and returns its exit status and output.
+    private static func runTool(_ url: URL, _ arguments: [String]) -> (status: Int32, output: String) {
+        let process = Process()
+        process.executableURL = url
+        process.arguments = arguments
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+        do { try process.run() } catch { return (-1, error.localizedDescription) }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return (process.terminationStatus, String(decoding: data, as: UTF8.self))
     }
 
     /// Runs a PAC script's FindProxyForURL for a host in JavaScriptCore.

@@ -13,6 +13,8 @@ let package = Package(
             // App code runs on the main thread unless you say otherwise.
             swiftSettings: [.defaultIsolation(MainActor.self)]
         ),
+        // The root helper for Transparent mode, started by launchd. Foundation only.
+        .executableTarget(name: "ZapretMacHelper", dependencies: ["ZapretMacKit"]),
         .testTarget(name: "ZapretMacKitTests", dependencies: ["ZapretMacKit"]),
     ]
 )
