@@ -206,6 +206,76 @@ enum SelfTest {
             check("the command has two profiles, each with the hostlist",
                   line.contains(" --new ") && line.components(separatedBy: "--hostlist=").count - 1 == 2, line)
 
+            // S-070 S-071
+            // Subscribed lists, served from local files (never the internet),
+            // feed the hostlist files tpws reads, next to My list.
+            let listDir = Store.directory.appending(path: "selftest-lists", directoryHint: .isDirectory)
+            try? FileManager.default.createDirectory(at: listDir, withIntermediateDirectories: true)
+            let plainList = listDir.appending(path: "community.txt")
+            try? "# community list\nblocked-one.example\nwww.Blocked-Two.example # mirror\n\nblocked-one.example\n"
+                .write(to: plainList, atomically: true, encoding: .utf8)
+            let neverText = listDir.appending(path: "never.txt")
+            try? "# banks\nnever-one.example\n".write(to: neverText, atomically: true, encoding: .utf8)
+            let gzip = Process()
+            gzip.executableURL = URL(fileURLWithPath: "/usr/bin/gzip")
+            gzip.arguments = ["-kf", neverText.path]
+            try? gzip.run()
+            gzip.waitUntilExit()
+            let gzipList = listDir.appending(path: "never.txt.gz")
+            @MainActor func waitRunning() async {
+                for _ in 0..<30 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+            }
+            func file(_ url: URL) -> String { (try? String(contentsOf: url, encoding: .utf8)) ?? "" }
+
+            await waitRunning()
+            let pidBeforeList = model.engine.pid
+            let addError = await model.addSubscription(url: plainList, name: "", excluded: false)
+            check("subscribing to a local list works", addError == nil, addError ?? "")
+            let subscription = model.subscriptions(excluded: false).first { $0.url == plainList.absoluteString }
+            check("the list has its name, domain count, and update time",
+                  subscription?.displayName == "community.txt" && subscription?.domainCount == 2 && subscription?.lastUpdated != nil,
+                  "\(String(describing: subscription?.displayName)) \(String(describing: subscription?.domainCount))")
+            let withList = file(Store.hostlistURL)
+            check("the hostlist file has My list and the list's sites",
+                  withList == "discord.com\nyoutube.com\nblocked-one.example\nblocked-two.example\n", withList)
+            await waitRunning()
+            check("tpws restarts with the new sites", model.engine.state == .running && model.engine.pid != pidBeforeList)
+            check("a list under Sites to Unblock keeps the same hostlist option in every profile",
+                  model.command.arguments.filter { $0 == "--hostlist=\(Store.hostlistURL.path)" }.count == 2)
+
+            let gzipError = await model.addSubscription(url: gzipList, name: "Banks", excluded: true)
+            check("subscribing to a gzip list works", gzipError == nil, gzipError ?? "")
+            let neverFile = file(Store.excludeURL)
+            check("a gzip list under Never Touch reaches the exclude file", neverFile == "apple.com\nnever-one.example\n", neverFile)
+            check("the gzip list keeps the name it was given",
+                  model.subscriptions(excluded: true).first?.displayName == "Banks")
+
+            if let subscription {
+                await waitRunning()
+                let steadyPid = model.engine.pid
+                await model.updateSubscription(subscription)
+                check("updating an unchanged list does not restart tpws", model.engine.pid == steadyPid && model.engine.state == .running)
+                check("a good update clears the error and sets the time", subscription.lastError == nil && subscription.lastUpdated != nil)
+
+                // S-071: a failed download keeps the last good list.
+                let lastGood = subscription.lastUpdated
+                subscription.url = listDir.appending(path: "missing.txt").absoluteString
+                await model.updateSubscription(subscription)
+                let afterFail = file(Store.hostlistURL)
+                check("a failed update keeps the old domains", afterFail == withList && subscription.domainCount == 2, afterFail)
+                check("a failed update shows the error on the row", !(subscription.lastError ?? "").isEmpty)
+                check("a failed update keeps the last update time", subscription.lastUpdated == lastGood)
+                check("a failed update does not restart tpws", model.engine.pid == steadyPid)
+
+                // Turning a list off takes its sites out; deleting it too.
+                model.setEnabled(subscription, false)
+                check("a list turned off leaves the hostlist file", file(Store.hostlistURL) == "discord.com\nyoutube.com\n")
+                model.remove(model.subscriptions())
+                check("deleting lists leaves only My list",
+                      file(Store.hostlistURL) == "discord.com\nyoutube.com\n" && file(Store.excludeURL) == "apple.com\n")
+                await waitRunning()
+            }
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 

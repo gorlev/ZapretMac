@@ -44,6 +44,10 @@ struct ZapretMacApp: App {
                     .keyboardShortcut("v", modifiers: [.command, .option])
                 Button("Add Sites…") { model.requestAddSites() }
                     .keyboardShortcut("n", modifiers: [.command, .shift])
+                Button("Add Subscription…") { model.requestAddSubscription() }
+                    .keyboardShortcut("n", modifiers: [.command, .option])
+                Button("Update All Subscriptions") { model.updateAllSubscriptions() }
+                    .keyboardShortcut("u", modifiers: [.command, .option])
             }
             CommandMenu("Bypass") {
                 Button(model.engine.isOn ? String(localized: "Turn Off") : String(localized: "Turn On")) { model.toggle() }
@@ -101,6 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // open one (a locked screen, restored state with no windows).
         SelfTest.runIfRequested(model: model)
         model.recoverFromCrash()
+        model.startSubscriptionSchedule()
         if model.prefs.startOnLaunch, !Store.isOverridden { model.turnOn() }
     }
 
@@ -144,10 +149,16 @@ enum Store {
     static var hostlistURL: URL { directory.appending(path: "hostlist.txt") }
     static var excludeURL: URL { directory.appending(path: "hostlist-exclude.txt") }
     static var pidURL: URL { directory.appending(path: "tpws.pid") }
+    /// The cleaned domains of one subscribed list, one per line.
+    static func subscriptionURL(_ id: UUID) -> URL {
+        let dir = directory.appending(path: "subscriptions", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appending(path: "\(id.uuidString).txt")
+    }
 
     static func makeContainer() -> ModelContainer {
         do {
-            return try ModelContainer(for: DomainEntry.self, CustomStrategy.self,
+            return try ModelContainer(for: DomainEntry.self, CustomStrategy.self, ListSubscription.self,
                                       configurations: ModelConfiguration(url: url))
         } catch {
             fatalError("Could not open the database at \(url.path): \(error)")
