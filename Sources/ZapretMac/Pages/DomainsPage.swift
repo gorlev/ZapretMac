@@ -7,6 +7,7 @@ import ZapretMacKit
 struct DomainsPage: View {
     @Environment(AppModel.self) private var model
     @Query(sort: \DomainEntry.domain) private var all: [DomainEntry]
+    @Query(sort: \ListSubscription.createdAt) private var allSubscriptions: [ListSubscription]
     @State private var showExcluded = false
     @State private var input = ""
     @State private var selection = Set<PersistentIdentifier>()
@@ -15,68 +16,45 @@ struct DomainsPage: View {
     @FocusState private var inputFocused: Bool
 
     private var entries: [DomainEntry] { all.filter { $0.isExcluded == showExcluded } }
+    private var subscriptions: [ListSubscription] { allSubscriptions.filter { $0.isExcluded == showExcluded } }
 
     var body: some View {
         VStack(spacing: 0) {
             header
             Divider()
             List(selection: $selection) {
-                ForEach(entries) { entry in
-                    DomainRow(entry: entry)
-                        .tag(entry.id)
-                        .contextMenu {
-                            Button(entry.isEnabled ? String(localized: "Turn Off") : String(localized: "Turn On")) {
-                                entry.isEnabled.toggle()
-                                model.listsChanged()
-                            }
-                            Button(showExcluded ? String(localized: "Move to Sites to Unblock") : String(localized: "Move to Never Touch")) {
-                                entry.isExcluded.toggle()
-                                model.listsChanged()
-                            }
-                            Divider()
-                            Button("Delete", role: .destructive) { delete(contextFor: entry) }
+                if !subscriptions.isEmpty {
+                    Section("Subscriptions") {
+                        ForEach(subscriptions) { subscription in
+                            SubscriptionRow(subscription: subscription)
+                                .tag(subscription.id)
+                                .contextMenu { subscriptionMenu(subscription) }
                         }
+                    }
+                }
+                Section {
+                    sites
+                } header: {
+                    if !subscriptions.isEmpty { Text("My List") }
                 }
             }
-            .onDeleteCommand { model.remove(entries.filter { selection.contains($0.id) }) }
+            .onDeleteCommand(perform: deleteSelection)
             .overlay {
-                if entries.isEmpty {
+                if entries.isEmpty && subscriptions.isEmpty {
                     ContentUnavailableView {
                         Label(showExcluded ? String(localized: "Nothing Excluded") : String(localized: "No Sites Yet"), systemImage: showExcluded ? "hand.raised" : "globe")
                     } description: {
                         Text(showExcluded
                              ? String(localized: "Sites here are never changed, even with All sites on. Add banks or sites the strategy breaks.")
                              : String(localized: "Add the sites that do not open, like youtube.com or discord.com. Paste many at once."))
+                    } actions: {
+                        Button("Add Subscription…") { model.requestAddSubscription(excluded: showExcluded) }
                     }
                 }
             }
         }
         .navigationTitle("Sites")
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Picker("List", selection: $showExcluded) {
-                    Text("Sites to Unblock").tag(false)
-                    Text("Never Touch").tag(true)
-                }
-                .pickerStyle(.segmented)
-                .fixedSize()
-            }
-            ToolbarItem {
-                Button("Import", systemImage: "square.and.arrow.down") { importing = true }
-                    .help("Add every domain in a text file, one per line")
-            }
-            ToolbarItem {
-                Button("Add Sites", systemImage: "plus") { inputFocused = true }
-                    .help("Type or paste sites to add (Shift-Command-N)")
-            }
-            ToolbarItem {
-                Button("Delete", systemImage: "trash") {
-                    model.remove(entries.filter { selection.contains($0.id) })
-                }
-                .disabled(selection.isEmpty)
-                .help("Delete the selected sites. Undo with Command-Z (Delete)")
-            }
-        }
+        .toolbar { toolbar }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.plainText, .text], allowsMultipleSelection: true) { result in
             guard case .success(let urls) = result else { return }
             var added = 0
@@ -89,9 +67,83 @@ struct DomainsPage: View {
             }
             note = String(localized: "Added \(added) sites.")
         }
-        .onChange(of: showExcluded) { selection.removeAll(); note = nil }
+        .onChange(of: showExcluded) { selection.removeAll(); note = nil; model.addSubscriptionExcluded = showExcluded }
         .onChange(of: model.addSitesRequest) { inputFocused = true }
-        .onAppear { if model.addSitesRequest > 0 { inputFocused = true } }
+        .onAppear {
+            model.addSubscriptionExcluded = showExcluded
+            if model.addSitesRequest > 0 { inputFocused = true }
+        }
+    }
+
+    @ViewBuilder private var sites: some View {
+        ForEach(entries) { entry in
+            DomainRow(entry: entry)
+                .tag(entry.id)
+                .contextMenu {
+                    Button(entry.isEnabled ? String(localized: "Turn Off") : String(localized: "Turn On")) {
+                        entry.isEnabled.toggle()
+                        model.listsChanged()
+                    }
+                    Button(showExcluded ? String(localized: "Move to Sites to Unblock") : String(localized: "Move to Never Touch")) {
+                        entry.isExcluded.toggle()
+                        model.listsChanged()
+                    }
+                    Divider()
+                    Button("Delete", role: .destructive) { delete(contextFor: entry) }
+                }
+        }
+    }
+
+    @ToolbarContentBuilder private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            Picker("List", selection: $showExcluded) {
+                Text("Sites to Unblock").tag(false)
+                Text("Never Touch").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .fixedSize()
+        }
+        ToolbarItem {
+            Button("Import", systemImage: "square.and.arrow.down") { importing = true }
+                .help("Add every domain in a text file, one per line")
+        }
+        ToolbarItem {
+            Button("Add Subscription", systemImage: "link.badge.plus") { model.requestAddSubscription(excluded: showExcluded) }
+                .help("Subscribe to a site list on the web; it updates every day (Option-Command-N)")
+        }
+        ToolbarItem {
+            Button("Add Sites", systemImage: "plus") { inputFocused = true }
+                .help("Type or paste sites to add (Shift-Command-N)")
+        }
+        ToolbarItem {
+            Button("Delete", systemImage: "trash", action: deleteSelection)
+                .disabled(selection.isEmpty)
+                .help("Delete the selected sites. Undo with Command-Z (Delete)")
+        }
+    }
+
+    @ViewBuilder private func subscriptionMenu(_ subscription: ListSubscription) -> some View {
+        Button("Update Now") { Task { await model.updateSubscription(subscription) } }
+            .disabled(model.updatingSubscriptions.contains(subscription.uuid))
+        Button(subscription.isEnabled ? String(localized: "Turn Off") : String(localized: "Turn On")) {
+            model.setEnabled(subscription, !subscription.isEnabled)
+        }
+        Button("Copy Address") {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(subscription.url, forType: .string)
+        }
+        Divider()
+        Button("Delete", role: .destructive) {
+            if selection.contains(subscription.id) { deleteSelection() } else { model.remove([subscription]) }
+        }
+    }
+
+    private func deleteSelection() {
+        let subs = subscriptions.filter { selection.contains($0.id) }
+        let sites = entries.filter { selection.contains($0.id) }
+        if !subs.isEmpty { model.remove(subs) }
+        if !sites.isEmpty { model.remove(sites) }
+        selection.removeAll()
     }
 
     private var header: some View {
@@ -143,7 +195,7 @@ struct DomainsPage: View {
 
     private func delete(contextFor entry: DomainEntry) {
         if selection.contains(entry.id) {
-            model.remove(entries.filter { selection.contains($0.id) })
+            deleteSelection()
         } else {
             model.remove([entry])
         }
@@ -169,5 +221,64 @@ private struct DomainRow: View {
             Spacer()
         }
         .padding(.vertical, 2)
+    }
+}
+
+/// A subscribed list: its name, how many sites it has, and when it was last
+/// downloaded, or why the last download failed.
+private struct SubscriptionRow: View {
+    @Environment(AppModel.self) private var model
+    @Bindable var subscription: ListSubscription
+
+    private var isUpdating: Bool { model.updatingSubscriptions.contains(subscription.uuid) }
+
+    var body: some View {
+        HStack(spacing: Space.sm) {
+            Toggle("", isOn: Binding(get: { subscription.isEnabled },
+                                     set: { model.setEnabled(subscription, $0) }))
+                .toggleStyle(.checkbox)
+                .labelsHidden()
+                .help(subscription.isEnabled ? String(localized: "On: tpws uses the sites in this list") : String(localized: "Off: kept but not used"))
+            Image(systemName: "link")
+                .foregroundStyle(subscription.isEnabled ? AnyShapeStyle(Palette.accentText) : AnyShapeStyle(.tertiary))
+                .frame(width: 20)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(subscription.displayName)
+                    .foregroundStyle(subscription.isEnabled ? .primary : .secondary)
+                    .lineLimit(1)
+                status
+                    .font(.caption)
+                    .lineLimit(1)
+            }
+            .help(subscription.url)
+            Spacer(minLength: Space.sm)
+            if isUpdating {
+                ProgressView().controlSize(.small)
+            } else {
+                Button("Update Now", systemImage: "arrow.clockwise") {
+                    Task { await model.updateSubscription(subscription) }
+                }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.borderless)
+                .help("Download this list again")
+            }
+            Text("\(subscription.domainCount) sites")
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .padding(.vertical, 2)
+    }
+
+    @ViewBuilder private var status: some View {
+        if isUpdating {
+            Text("Downloading…").foregroundStyle(.secondary)
+        } else if let error = subscription.lastError {
+            Label(error, systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .help(error)
+        } else if let date = subscription.lastUpdated {
+            Text("Updated \(Text(date, format: .relative(presentation: .named)))")
+                .foregroundStyle(.secondary)
+        }
     }
 }

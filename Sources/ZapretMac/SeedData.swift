@@ -19,7 +19,18 @@ enum SeedData {
         model.addDomains(from: "apple.com icloud.com", excluded: true)
         if let off = model.domains(excluded: false).first(where: { $0.domain == "wattpad.com" }) { off.isEnabled = false }
         context.insert(CustomStrategy(name: "My ISP", commandLine: "--tlsrec=sniext+1 --split-pos=2,midsld --oob"))
+        // Two subscriptions with no network: a list in the store folder, and
+        // one whose last download failed.
+        let failed = ListSubscription(url: "https://lists.example.org/ru/blocked.txt.gz")
+        failed.domainCount = 18421
+        failed.lastUpdated = Date.now.addingTimeInterval(-2 * 24 * 60 * 60)
+        failed.lastError = String(localized: "The server answered with error \(404).")
+        context.insert(failed)
         try? context.save()
+        let community = Store.directory.appending(path: "community-hosts.txt")
+        try? "# Community list\nrutracker.org\nrutor.info\nnnmclub.to\nlinkedin.com\nmedium.com\nsoundcloud.com\nproton.me\nsignal.org\n"
+            .write(to: community, atomically: true, encoding: .utf8)
+        Task { _ = await model.addSubscription(url: community, name: "Community", excluded: false) }
         model.prefs.useSystemProxy = false
         model.turnOn()
         // A little real traffic, so the log and the stats have something.

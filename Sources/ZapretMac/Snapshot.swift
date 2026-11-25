@@ -51,6 +51,19 @@ enum Snapshot {
                 }
                 BypassHUD.shared.hide()
             }
+            // Extras. The Add Subscription sheet also runs alone with
+            // APP_SNAPSHOT_PAGES=domains,subscription (the rest scans for minutes).
+            if only == nil || only?.contains("extras") == true || only?.contains("subscription") == true {
+                let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    model.requestAddSubscription(excluded: false)
+                    try? await Task.sleep(for: .seconds(1))
+                    capture(to: "\(dir)/subscription-\(mode).png", window: main?.attachedSheet)
+                    model.showAddSubscription = false
+                    try? await Task.sleep(for: .seconds(0.6))
+                }
+            }
             // The strategy editor sheet, then Overview with the bypass off.
             if only == nil || only?.contains("extras") == true {
                 let main = NSApp.windows.first { $0.canBecomeMain && !$0.isSheet }

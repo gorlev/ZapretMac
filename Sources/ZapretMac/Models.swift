@@ -103,6 +103,13 @@ final class AppModel {
     var addSitesRequest = 0
     var check: SiteCheck.Result?
     var isChecking = false
+    /// The Add Subscription sheet, and which list a new subscription feeds.
+    var showAddSubscription = false
+    var addSubscriptionExcluded = false
+    /// Subscriptions downloading now, by uuid: their rows show progress.
+    var updatingSubscriptions = Set<UUID>()
+    /// Checks once an hour whether a subscription is a day old.
+    @ObservationIgnored var subscriptionTimer: Timer?
     /// Settings reopens on the last tab. Test and snapshot runs leave it alone.
     var settingsTab: SettingsTab = SettingsTab(rawValue: UserDefaults.standard.string(forKey: "settings.tab") ?? "") ?? .general {
         didSet { if !Store.isOverridden { UserDefaults.standard.set(settingsTab.rawValue, forKey: "settings.tab") } }
@@ -255,11 +262,27 @@ final class AppModel {
         restartIfRunning()
     }
 
-    private func writeLists() {
-        let include = domains(excluded: false).filter(\.isEnabled).map(\.domain)
-        let exclude = domains(excluded: true).filter(\.isEnabled).map(\.domain)
-        try? Domains.fileContents(include).write(to: Store.hostlistURL, atomically: true, encoding: .utf8)
-        try? Domains.fileContents(exclude).write(to: Store.excludeURL, atomically: true, encoding: .utf8)
+    /// My list plus the turned-on subscriptions: what tpws and the PAC file use.
+    func mergedDomains(excluded: Bool) -> [String] {
+        let own = domains(excluded: excluded).filter(\.isEnabled).map(\.domain)
+        let lists = subscriptions(excluded: excluded).filter(\.isEnabled).map(subscriptionDomains)
+        return SiteListSubscription.merge(own, lists)
+    }
+
+    /// Writes My list and the turned-on subscriptions into the two files tpws
+    /// reads. Returns true when either file's domains changed.
+    @discardableResult
+    func writeLists() -> Bool {
+        var changed = false
+        for excluded in [false, true] {
+            let text = Domains.fileContents(mergedDomains(excluded: excluded))
+            let url = excluded ? Store.excludeURL : Store.hostlistURL
+            if (try? String(contentsOf: url, encoding: .utf8)) != text {
+                changed = true
+                try? text.write(to: url, atomically: true, encoding: .utf8)
+            }
+        }
+        return changed
     }
 
     var includeCount: Int { domains(excluded: false).filter(\.isEnabled).count }
@@ -268,6 +291,7 @@ final class AppModel {
 
     var command: TPWSCommand {
         let exclude = domains(excluded: true).contains(where: \.isEnabled)
+            || subscriptions(excluded: true).contains { $0.isEnabled && $0.domainCount > 0 }
         return TPWSCommand(port: prefs.port, strategy: activeStrategy.arguments, scope: prefs.scope,
                            hostlistPath: Store.hostlistURL.path,
                            excludePath: exclude ? Store.excludeURL.path : nil,
@@ -353,8 +377,8 @@ final class AppModel {
 
     /// The PAC script for the enabled lists and the current port.
     func pacScript() -> String {
-        PACFile.script(include: domains(excluded: false).filter(\.isEnabled).map(\.domain),
-                       exclude: domains(excluded: true).filter(\.isEnabled).map(\.domain),
+        PACFile.script(include: mergedDomains(excluded: false),
+                       exclude: mergedDomains(excluded: true),
                        port: prefs.port)
     }
 

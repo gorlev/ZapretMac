@@ -171,28 +171,28 @@ Acceptance:
 - [unit] A downloaded list is parsed with the same rules as pasted sites; gzip is unpacked.
 - [self] A list served from a local test file adds its domains to the hostlist file tpws reads.
 - [snap] Subscriptions shows each list with its domain count and when it was last updated.
-Status: todo
+Status: done
 
 ### S-071 Keep subscribed lists fresh
 As the user, subscribed lists update once a day in the background and when I click Update Now; a failed download keeps the last good copy.
 Depends: S-070
 Acceptance:
 - [self] A failed refresh keeps the old domains and shows the error on the row.
-Status: todo
+Status: done
 
 ### S-072 Send only listed sites through the proxy
 As the user, with My list and System proxy on, only the sites in my lists go through tpws; everything else connects directly (a PAC file served on 127.0.0.1, set with `networksetup -setautoproxyurl`, restored on stop).
 Acceptance:
 - [unit] The PAC script returns the SOCKS proxy for a listed domain and its subdomains, DIRECT for others.
 - [manual] Safari opens a listed site through tpws and an unlisted one directly.
-Status: todo
+Status: done
 
 ### S-073 Turn the bypass on and off from anywhere
 As the user, I set a global shortcut in Settings and press it in any app to turn the bypass on or off; a small HUD says which.
 Acceptance:
 - [manual] The shortcut works with another app in front.
 - [snap] Settings > General shows the shortcut recorder.
-Status: todo
+Status: done
 
 ## M8 Transparent mode
 
