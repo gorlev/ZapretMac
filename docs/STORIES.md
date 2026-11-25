@@ -131,7 +131,7 @@ As the user, I click "Save as Strategy…" on any working row, and the editor op
 Depends: S-090
 Acceptance:
 - [self] Saving a found row creates a custom strategy with the same flags and selects it.
-Status: todo
+Status: done
 
 ### S-092 Check several sites at once
 As the user, I paste a few blocked sites (one per line) into Find a Strategy; each strategy is tried on all of them, and a row works only if every site opens.
@@ -139,7 +139,7 @@ Depends: S-090
 Acceptance:
 - [unit] A trial with sites A and B is "works" only if both open; its time is the slowest.
 - [snap] Each row shows "2 of 3 sites" when some failed.
-Status: todo
+Status: done
 
 ### S-093 Use one strategy for HTTP and another for HTTPS
 As the user, when the scan finds the best HTTP and the best HTTPS strategy separately, I save them as one strategy that tpws applies per port (two profiles joined with `--new`, `--filter-tcp=80` and `--filter-tcp=443`).
@@ -147,7 +147,7 @@ Depends: S-090
 Acceptance:
 - [unit] Two option sets join into one argument list with `--filter-tcp=80 … --new --filter-tcp=443 …`, and parse back.
 - [self] tpws accepts the joined flags (dry run).
-Status: todo
+Status: done
 
 ### S-094 More built-in strategies from blockcheck
 As the user, I find four more ready-made strategies that blockcheck tries early: TLS record in the middle of the domain (`--tlsrec=midsld`), split at the server-name field (`--split-pos=sniext+1`), multi-split (`--split-pos=1,sniext+1,host+1,midsld,endhost-1`), and Host padding for plain HTTP (`--hostpad=1024`).

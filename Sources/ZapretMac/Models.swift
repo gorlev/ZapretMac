@@ -349,6 +349,7 @@ final class AppModel {
     /// or HTTPS set by the first address.
     func startFinder(urls: [URL], depth: ScanDepth? = nil) {
         guard let first = urls.first else { return }
+        rememberScan(before: first)
         let depth = depth ?? finderDepth
         finderDepth = depth
         switch depth {
@@ -360,6 +361,82 @@ final class AppModel {
             let list = ScanPlan.tries(for: first).map { (id: $0.id, name: $0.name, arguments: $0.arguments) }
             finder.start(urls: urls, strategies: list, depth: .thorough, timeout: 6)
         }
+    }
+
+    // MARK: - Save what a scan found (S-091, S-093)
+
+    /// The strategy editor shown on top of Find a Strategy.
+    var finderDraft: StrategyDraft?
+    /// The address the finder last ran on.
+    private(set) var finderURL: URL?
+    /// The fastest working row of earlier thorough scans of `keptHost`,
+    /// for HTTP (true) and HTTPS (false), kept when the next scan starts.
+    private var keptScanBest: [Bool: Trial] = [:]
+    private var keptHost = ""
+
+    private static func isHTTP(_ url: URL) -> Bool { url.scheme?.lowercased() == "http" }
+
+    private static func fastest(_ trials: [Trial]) -> Trial? {
+        trials.compactMap { t -> (Trial, Int)? in
+            if case .works(let ms) = t.status { (t, ms) } else { nil }
+        }
+        .min { $0.1 < $1.1 }?.0
+    }
+
+    /// Keeps the best row of the scan that is about to be replaced, so an
+    /// HTTP scan after an HTTPS one (or the other way) can join both.
+    private func rememberScan(before next: URL) {
+        if let last = finderURL, finder.depth == .thorough, let best = Self.fastest(finder.trials.filter(\.isScan)) {
+            keptScanBest[Self.isHTTP(last)] = best
+        }
+        let host = next.host?.lowercased() ?? ""
+        if host != keptHost { keptScanBest = [:]; keptHost = host }
+        keptScanBest[Self.isHTTP(next)] = nil
+        finderURL = next
+    }
+
+    /// The fastest working scan row for HTTP or HTTPS: from the scan on
+    /// screen, or from the scan before it on the same site.
+    func bestScanRow(http: Bool) -> Trial? {
+        if finder.depth == .thorough, let url = finderURL, Self.isHTTP(url) == http,
+           let live = Self.fastest(finder.trials.filter(\.isScan)) {
+            return live
+        }
+        return keptScanBest[http]
+    }
+
+    /// Opens the strategy editor on top of the finder with a scan row's flags.
+    func saveScanRow(_ trial: Trial) {
+        let name = trial.name.isEmpty ? String(localized: "\(finder.site) strategy") : trial.name
+        finderDraft = StrategyDraft(editing: nil, name: name, options: StrategyOptions(arguments: trial.arguments))
+    }
+
+    /// After a thorough scan of an https:// address with no HTTP result yet.
+    var canAlsoScanHTTP: Bool {
+        guard let url = finderURL, !finder.isRunning, finder.depth == .thorough, !finder.trials.isEmpty else { return false }
+        return !Self.isHTTP(url) && keptScanBest[true] == nil
+    }
+
+    /// Runs blockcheck's HTTP set on http:// and the same host.
+    func alsoScanHTTP() {
+        guard let url = finderURL, var parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return }
+        parts.scheme = "http"
+        parts.port = nil
+        guard let http = parts.url else { return }
+        startFinder(url: http, depth: .thorough)
+    }
+
+    /// The best HTTP and HTTPS rows joined into one two-profile strategy.
+    var joinedScanStrategy: StrategyOptions? {
+        guard finder.depth == .thorough, let http = bestScanRow(http: true), let https = bestScanRow(http: false) else { return nil }
+        let profiles = StrategyProfiles(http: StrategyOptions(arguments: http.arguments),
+                                        https: StrategyOptions(arguments: https.arguments))
+        return StrategyOptions(arguments: profiles.arguments)
+    }
+
+    func saveJoinedScan() {
+        guard let options = joinedScanStrategy else { return }
+        finderDraft = StrategyDraft(editing: nil, name: String(localized: "\(finder.site) strategy"), options: options)
     }
 
     // MARK: - Login item

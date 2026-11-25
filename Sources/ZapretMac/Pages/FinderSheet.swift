@@ -83,8 +83,17 @@ struct FinderSheet: View {
                 Divider()
                 List(finder.ranked) { trial in
                     TrialRow(trial: trial) {
-                        if !trial.isScan {
+                        if trial.isScan {
+                            Button("Save as Strategy…") { model.saveScanRow(trial) }
+                                .controlSize(.small)
+                                .help("Open the strategy editor with these flags")
+                        } else {
                             UseButton(inUse: model.prefs.strategyID == trial.id) { model.choose(strategy: trial.id) }
+                        }
+                    }
+                    .contextMenu {
+                        if trial.isScan && trial.works {
+                            Button("Save as Strategy…") { model.saveScanRow(trial) }
                         }
                     }
                 }
@@ -99,6 +108,14 @@ struct FinderSheet: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                 Spacer()
+                if model.canAlsoScanHTTP {
+                    Button("Also scan HTTP") { model.alsoScanHTTP() }
+                        .help("Run the HTTP tries on http:// and the same site")
+                }
+                if model.joinedScanStrategy != nil && !finder.isRunning {
+                    Button("Save HTTP + HTTPS Strategy…") { model.saveJoinedScan() }
+                        .help("One strategy: the fastest HTTP try for port 80 and the fastest HTTPS try for port 443")
+                }
                 Button("Done") {
                     finder.stop()
                     dismiss()
@@ -109,6 +126,12 @@ struct FinderSheet: View {
         }
         .frame(width: 520)
         .noInitialFocus()
+        // The editor opens on top of this sheet, so the results stay put.
+        .sheet(item: $model.finderDraft) { draft in
+            StrategyEditor(draft: draft)
+                .environment(model)
+                .themed()
+        }
     }
 
     /// Rows with flags under the name are taller; past eight rows the list scrolls.
@@ -151,7 +174,7 @@ struct FinderSheet: View {
 /// One strategy's result. Scan tries show their flags under the name. With
 /// several sites, a row where some opened shows how many, and its help lists
 /// every site's result.
-/// `action` is shown after the time on rows that work (Use, and later Save).
+/// `action` is shown after the time on rows that work (Use, or Save as Strategy… on scan rows).
 private struct TrialRow<Action: View>: View {
     let trial: Trial
     @ViewBuilder let action: () -> Action
