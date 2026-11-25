@@ -333,23 +333,32 @@ final class AppModel {
     // MARK: - Find a strategy
 
     func openFinder() {
-        if SiteCheck.url(from: prefs.testURL) == nil { prefs.testURL = "https://discord.com" }
+        if SiteCheck.urls(from: prefs.finderSites).isEmpty {
+            prefs.finderSites = SiteCheck.url(from: prefs.testURL) == nil ? "https://discord.com" : prefs.testURL
+        }
         showFinder = true
     }
 
     /// Quick: every built-in strategy, then the user's own. Thorough:
     /// blockcheck's tpws matrix for the address, with a shorter wait per try.
     func startFinder(url: URL, depth: ScanDepth? = nil) {
+        startFinder(urls: [url], depth: depth)
+    }
+
+    /// Every strategy is tried on every site. A thorough scan picks the HTTP
+    /// or HTTPS set by the first address.
+    func startFinder(urls: [URL], depth: ScanDepth? = nil) {
+        guard let first = urls.first else { return }
         let depth = depth ?? finderDepth
         finderDepth = depth
         switch depth {
         case .quick:
             var list = Preset.all.map { (id: "preset:\($0.id)", name: $0.name, arguments: $0.options.arguments) }
             list += customStrategies().map { (id: $0.selectionID, name: $0.name, arguments: $0.options.arguments) }
-            finder.start(url: url, strategies: list, depth: .quick)
+            finder.start(urls: urls, strategies: list, depth: .quick)
         case .thorough:
-            let list = ScanPlan.tries(for: url).map { (id: $0.id, name: $0.name, arguments: $0.arguments) }
-            finder.start(url: url, strategies: list, depth: .thorough, timeout: 6)
+            let list = ScanPlan.tries(for: first).map { (id: $0.id, name: $0.name, arguments: $0.arguments) }
+            finder.start(urls: urls, strategies: list, depth: .thorough, timeout: 6)
         }
     }
 

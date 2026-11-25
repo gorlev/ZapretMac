@@ -1,5 +1,6 @@
 import CFNetwork
 import Foundation
+import ZapretMacKit
 
 /// Opens one address twice, once directly and once through tpws, and
 /// compares. A site that fails directly but opens through tpws shows the
@@ -23,6 +24,13 @@ enum SiteCheck {
         if !s.contains("://") { s = "https://" + s }
         guard let url = URL(string: s), url.host != nil else { return nil }
         return url
+    }
+
+    /// Several addresses typed one per line or separated by spaces, commas, or
+    /// semicolons (the Sites list's rules). Repeats of a host are dropped.
+    static func urls(from text: String) -> [URL] {
+        var seen = Set<String>()
+        return Domains.pieces(text).compactMap(url(from:)).filter { seen.insert($0.host?.lowercased() ?? "").inserted }
     }
 
     static func run(_ url: URL, port: Int?) async -> Result {

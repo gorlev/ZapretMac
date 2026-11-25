@@ -1,8 +1,8 @@
 import SwiftUI
 import ZapretMacKit
 
-/// "Find a Strategy": tries every strategy against one site and shows which
-/// ones open it, fastest first.
+/// "Find a Strategy": tries every strategy against one or more sites and
+/// shows which ones open all of them, fastest first.
 struct FinderSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -35,24 +35,44 @@ struct FinderSheet: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                HStack(spacing: Space.sm) {
-                    TextField("Blocked site", text: $prefs.testURL, prompt: Text("discord.com"))
+                HStack(alignment: .top, spacing: Space.sm) {
+                    TextField("Blocked sites", text: $prefs.finderSites, prompt: Text(verbatim: "discord.com youtube.com"),
+                              axis: .vertical)
                         .textFieldStyle(.roundedBorder)
+                        .lineLimit(1...4)
                         .onSubmit(start)
                         .disabled(finder.isRunning)
+                        .help("One site, or several separated by spaces, commas, or new lines. A strategy works only if every site opens.")
                     if finder.isRunning {
                         Button("Stop") { finder.stop() }
                     } else {
                         Button(finder.trials.isEmpty ? String(localized: "Start Test") : String(localized: "Test Again"), action: start)
                             .buttonStyle(.borderedProminent)
-                            .disabled(SiteCheck.url(from: prefs.testURL) == nil)
+                            .disabled(SiteCheck.urls(from: prefs.finderSites).isEmpty)
                     }
                 }
-                if let direct = finder.direct {
+                if finder.direct.count == 1, let direct = finder.direct.first {
                     HStack(spacing: Space.sm) {
                         Text("Without ZapretMac")
                         Spacer()
-                        OutcomeLabel(outcome: direct)
+                        OutcomeLabel(outcome: direct.outcome)
+                    }
+                    .font(.callout)
+                } else if !finder.direct.isEmpty {
+                    VStack(alignment: .leading, spacing: Space.xs) {
+                        Text("Without ZapretMac")
+                        ForEach(finder.direct) { direct in
+                            HStack(spacing: Space.sm) {
+                                Text(verbatim: direct.site)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                Spacer()
+                                OutcomeLabel(outcome: direct.outcome)
+                                    .lineLimit(1)
+                            }
+                            .font(.caption)
+                        }
                     }
                     .font(.callout)
                 }
@@ -114,17 +134,24 @@ struct FinderSheet: View {
         }
         if finder.isStopped { return String(localized: "Stopped after \(done) of \(total).") }
         guard finder.isDone else { return "" }
+        if finder.sites.count > 1 {
+            if finder.workingCount == 0 { return String(localized: "No strategy opened every site.") }
+            return String(localized: "\(finder.workingCount) strategies open every site.")
+        }
         if finder.workingCount == 0 { return String(localized: "No strategy opened \(finder.site).") }
         return String(localized: "\(finder.workingCount) strategies open \(finder.site).")
     }
 
     private func start() {
-        guard let url = SiteCheck.url(from: model.prefs.testURL), !finder.isRunning else { return }
-        model.startFinder(url: url)
+        let urls = SiteCheck.urls(from: model.prefs.finderSites)
+        guard !urls.isEmpty, !finder.isRunning else { return }
+        model.startFinder(urls: urls)
     }
 }
 
-/// One strategy's result. Scan tries show their flags under the name.
+/// One strategy's result. Scan tries show their flags under the name. With
+/// several sites, a row where some opened shows how many, and its help lists
+/// every site's result.
 /// `action` is shown after the time on rows that work (Use, and later Save).
 private struct TrialRow<Action: View>: View {
     let trial: Trial
@@ -153,11 +180,30 @@ private struct TrialRow<Action: View>: View {
             case .works(let ms):
                 Text("\(ms) ms").foregroundStyle(.secondary).monospacedDigit()
                 action()
-            case .fails(let reason): Text(reason).foregroundStyle(.secondary).lineLimit(1)
+            case .fails(let reason):
+                if trial.isPartial {
+                    Text("\(trial.openCount) of \(trial.sites.count) sites").foregroundStyle(.secondary).monospacedDigit()
+                } else {
+                    Text(reason).foregroundStyle(.secondary).lineLimit(1)
+                }
             }
         }
         .font(.callout)
         .frame(minHeight: 28)
+        .help(siteDetails)
+    }
+
+    /// Every site's result, one per line, when there are several; the sites
+    /// that did not open come first.
+    private var siteDetails: String {
+        guard trial.sites.count > 1 else { return "" }
+        let ordered = trial.failedSites + trial.sites.filter(\.opens)
+        return ordered.map { attempt in
+            switch attempt.result {
+            case .opens(let ms): String(localized: "\(attempt.site): opens in \(ms) ms")
+            case .fails(let reason): String(localized: "\(attempt.site): \(reason)")
+            }
+        }.joined(separator: "\n")
     }
 
     @ViewBuilder private var icon: some View {
