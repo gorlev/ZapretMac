@@ -16,6 +16,9 @@ struct DomainsPage: View {
     @FocusState private var inputFocused: Bool
 
     private var entries: [DomainEntry] { all.filter { $0.isExcluded == showExcluded } }
+    /// My list splits into sites and, under them, IP addresses (S-103).
+    private var siteEntries: [DomainEntry] { entries.filter { !$0.isAddress } }
+    private var addressEntries: [DomainEntry] { entries.filter(\.isAddress) }
     private var subscriptions: [ListSubscription] { allSubscriptions.filter { $0.isExcluded == showExcluded } }
 
     var body: some View {
@@ -33,9 +36,14 @@ struct DomainsPage: View {
                     }
                 }
                 Section {
-                    sites
+                    rows(siteEntries)
                 } header: {
-                    if !subscriptions.isEmpty { Text("My List") }
+                    if !subscriptions.isEmpty || !addressEntries.isEmpty { Text("My List") }
+                }
+                if !addressEntries.isEmpty {
+                    Section("IP Addresses") {
+                        rows(addressEntries)
+                    }
                 }
             }
             .onDeleteCommand(perform: deleteSelection)
@@ -75,7 +83,7 @@ struct DomainsPage: View {
         }
     }
 
-    @ViewBuilder private var sites: some View {
+    @ViewBuilder private func rows(_ entries: [DomainEntry]) -> some View {
         ForEach(entries) { entry in
             DomainRow(entry: entry)
                 .tag(entry.id)
@@ -150,13 +158,14 @@ struct DomainsPage: View {
         VStack(alignment: .leading, spacing: Space.sm) {
             HStack(spacing: Space.sm) {
                 TextField("Add sites", text: $input,
-                          prompt: Text(showExcluded ? String(localized: "Add a site never to touch, like mybank.com") : String(localized: "Add sites, like youtube.com discord.com")))
+                          prompt: Text(showExcluded ? String(localized: "Add a site or IP range never to touch, like mybank.com") : String(localized: "Add sites or IP addresses, like youtube.com 203.0.113.0/24")))
                     .textFieldStyle(.roundedBorder)
                     .focused($inputFocused)
                     .onSubmit(add)
+                    .help("Sites and IP addresses or ranges (CIDR, IPv4 and IPv6), separated by spaces or new lines")
                 Button("Add", action: add)
                     .buttonStyle(.borderedProminent)
-                    .disabled(Domains.parseList(input).isEmpty)
+                    .disabled(isEmpty(IPRanges.route(input)))
             }
             HStack(spacing: Space.xs) {
                 if let note {
@@ -174,9 +183,14 @@ struct DomainsPage: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text("\(entries.count) sites")
+                Text("\(siteEntries.count) sites")
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
+                if !addressEntries.isEmpty {
+                    Text("\(addressEntries.count) IP addresses")
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
             }
             .font(.callout)
         }
@@ -186,11 +200,14 @@ struct DomainsPage: View {
     }
 
     private func add() {
+        if isEmpty(IPRanges.route(input)) { note = String(localized: "That does not look like a site or IP address."); return }
         let count = model.addDomains(from: input, excluded: showExcluded)
-        let parsed = Domains.parseList(input).count
-        if parsed == 0 { note = String(localized: "That does not look like a site address."); return }
         note = count == 0 ? String(localized: "Already in the list.") : String(localized: "Added \(count) sites.")
         input = ""
+    }
+
+    private func isEmpty(_ routed: (domains: [String], addresses: [String])) -> Bool {
+        routed.domains.isEmpty && routed.addresses.isEmpty
     }
 
     private func delete(contextFor entry: DomainEntry) {
@@ -213,7 +230,7 @@ private struct DomainRow: View {
                 .toggleStyle(.checkbox)
                 .labelsHidden()
                 .help(entry.isEnabled ? String(localized: "On: tpws uses this site") : String(localized: "Off: kept in the list but not used"))
-            Image(systemName: entry.isExcluded ? "hand.raised.fill" : "globe")
+            Image(systemName: entry.isExcluded ? "hand.raised.fill" : entry.isAddress ? "number" : "globe")
                 .foregroundStyle(entry.isEnabled ? AnyShapeStyle(Palette.accentText) : AnyShapeStyle(.tertiary))
                 .frame(width: 20)
             Text(entry.domain)
@@ -239,7 +256,7 @@ private struct SubscriptionRow: View {
                 .toggleStyle(.checkbox)
                 .labelsHidden()
                 .help(subscription.isEnabled ? String(localized: "On: tpws uses the sites in this list") : String(localized: "Off: kept but not used"))
-            Image(systemName: "link")
+            Image(systemName: subscription.listKind == .addresses ? "number" : "link")
                 .foregroundStyle(subscription.isEnabled ? AnyShapeStyle(Palette.accentText) : AnyShapeStyle(.tertiary))
                 .frame(width: 20)
             VStack(alignment: .leading, spacing: 0) {
@@ -262,9 +279,15 @@ private struct SubscriptionRow: View {
                 .buttonStyle(.borderless)
                 .help("Download this list again")
             }
-            Text("\(subscription.domainCount) sites")
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
+            Group {
+                if subscription.listKind == .addresses {
+                    Text("\(subscription.domainCount) IP addresses")
+                } else {
+                    Text("\(subscription.domainCount) sites")
+                }
+            }
+            .foregroundStyle(.secondary)
+            .monospacedDigit()
         }
         .padding(.vertical, 2)
     }

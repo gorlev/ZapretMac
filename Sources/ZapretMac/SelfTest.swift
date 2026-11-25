@@ -375,6 +375,78 @@ enum SelfTest {
             // runs as root, pf is never touched, and the system proxy stays off.
             await checkTransparentMode(model: model)
 
+            // S-103 S-106
+            // IP addresses and ranges reach tpws as ipset files, from My list
+            // and from a local IP list. Nothing is downloaded from the internet.
+            do {
+                let scopeBefore = model.prefs.scope
+                model.prefs.scope = .listOnly
+                let routedAdd = model.addDomains(from: "203.0.113.9/24 2001:DB8::1 not_a_site", excluded: false)
+                model.addDomains(from: "198.51.100.0/24", excluded: true)
+                check("pasted IP addresses are added as ranges", routedAdd == 2
+                      && Set(model.domains(excluded: false).filter(\.isAddress).map(\.domain)) == ["2001:db8::1", "203.0.113.0/24"],
+                      "\(routedAdd) \(model.domains(excluded: false).map(\.domain))")
+                check("IP addresses stay out of the hostlist", file(Store.hostlistURL) == "discord.com\nyoutube.com\n",
+                      file(Store.hostlistURL))
+                let ipList = listDir.appending(path: "ipsum.lst")
+                try? "# ipsum\n192.0.2.0/24\n203.0.113.5/24\n".write(to: ipList, atomically: true, encoding: .utf8)
+                let asDomains = await model.addSubscription(url: ipList, name: "", excluded: false, kind: .domains)
+                check("an IP list subscribed as sites says it holds addresses", asDomains?.contains("IP") == true, asDomains ?? "")
+                let ipError = await model.addSubscription(url: ipList, name: "Ranges", excluded: false, kind: .addresses)
+                check("subscribing to a local IP list works", ipError == nil, ipError ?? "")
+                let ipSubscription = model.subscriptions(excluded: false).first { $0.url == ipList.absoluteString }
+                check("the IP list keeps its kind and count", ipSubscription?.listKind == .addresses && ipSubscription?.domainCount == 2,
+                      "\(String(describing: ipSubscription?.kind)) \(String(describing: ipSubscription?.domainCount))")
+                let ipset = file(Store.ipsetURL)
+                let ipsetLines = ipset.split(separator: "\n").map(String.init)
+                check("the ipset file has My list's addresses, then the list's, each once",
+                      ipsetLines.count == 3 && Set(ipsetLines.prefix(2)) == ["2001:db8::1", "203.0.113.0/24"]
+                      && ipsetLines.last == "192.0.2.0/24", ipset)
+                let ipsetExclude = file(Store.ipsetExcludeURL)
+                check("the ipset exclude file has Never Touch's range", ipsetExclude == "198.51.100.0/24\n", ipsetExclude)
+
+                let arguments = model.command.arguments
+                let profiles = StrategyProfiles.split(arguments)
+                let strategyProfiles = StrategyProfiles.split(model.activeStrategy.arguments).count
+                let include = "--ipset=\(Store.ipsetURL.path)"
+                check("My list has the ipset once for every strategy profile",
+                      profiles.filter { $0.contains(include) }.count == strategyProfiles
+                      && profiles.allSatisfy { $0.contains(include) != $0.contains("--hostlist=\(Store.hostlistURL.path)") },
+                      arguments.joined(separator: " "))
+                check("every profile has the ipset exclude list",
+                      profiles.allSatisfy { $0.contains("--ipset-exclude=\(Store.ipsetExcludeURL.path)") }, arguments.joined(separator: " "))
+                model.prefs.scope = .allSites
+                let allSites = StrategyProfiles.split(model.command.arguments)
+                check("All sites keeps only the ipset exclude list in every profile",
+                      allSites.count == strategyProfiles && allSites.allSatisfy {
+                          !$0.contains(include) && $0.contains("--ipset-exclude=\(Store.ipsetExcludeURL.path)")
+                      }, model.command.arguments.joined(separator: " "))
+                model.prefs.scope = .listOnly
+
+                var transparent = model.command
+                transparent.mode = .transparent
+                check("the transparent arguments with ipset files pass the helper's check",
+                      HelperArguments.problem(in: transparent.arguments, allowedFolders: HelperArguments.allowedFolders(home: NSHomeDirectory())) == nil,
+                      transparent.arguments.joined(separator: " "))
+                let validated = runTool(helperBinary, ["--validate"] + transparent.arguments)
+                check("the helper accepts the ipset flags", validated.status == 0, validated.output)
+                let dry = await Engine.dryRun(transparent.arguments)
+                check("tpws accepts the ipset files", dry.ok, dry.output)
+                model.turnOn()
+                await waitRunning()
+                check("tpws runs with the ipset files", model.engine.state == .running, "\(model.engine.state)")
+
+                let suggestion = SuggestedLists.list(kind: .addresses).first
+                check("an IP list is among the suggestions", suggestion?.kind == .addresses && suggestion?.country != nil)
+
+                if let ipSubscription { model.remove([ipSubscription]) }
+                model.remove(model.domains(excluded: false).filter(\.isAddress) + model.domains(excluded: true).filter(\.isAddress))
+                check("deleting the addresses empties the ipset files",
+                      file(Store.ipsetURL).isEmpty && file(Store.ipsetExcludeURL).isEmpty
+                      && !model.command.arguments.contains { $0.hasPrefix("--ipset") })
+                model.prefs.scope = scopeBefore
+            }
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 

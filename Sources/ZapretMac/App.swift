@@ -161,6 +161,9 @@ enum Store {
 
     static var hostlistURL: URL { directory.appending(path: "hostlist.txt") }
     static var excludeURL: URL { directory.appending(path: "hostlist-exclude.txt") }
+    /// IP addresses and ranges for tpws `--ipset` and `--ipset-exclude` (S-103).
+    static var ipsetURL: URL { directory.appending(path: "ipset.txt") }
+    static var ipsetExcludeURL: URL { directory.appending(path: "ipset-exclude.txt") }
     static var pidURL: URL { directory.appending(path: "tpws.pid") }
     /// The cleaned domains of one subscribed list, one per line.
     static func subscriptionURL(_ id: UUID) -> URL {

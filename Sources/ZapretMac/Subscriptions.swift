@@ -14,6 +14,10 @@ final class ListSubscription {
     /// false: feeds "Sites to unblock". true: feeds "Never touch".
     var isExcluded: Bool = false
     var isEnabled: Bool = true
+    /// `ListKind` raw value: a list of domains, or of IP addresses (S-103).
+    /// Lists added before S-103 are domains.
+    var kind: String = ListKind.domains.rawValue
+    /// Entries in the last good download: domains, or addresses and ranges.
     var domainCount: Int = 0
     var lastUpdated: Date?
     /// Why the last download failed, or nil after a good one.
@@ -21,11 +25,14 @@ final class ListSubscription {
     var createdAt: Date = Date.now
     var uuid: UUID = UUID()
 
-    init(url: String, name: String = "", isExcluded: Bool = false) {
+    init(url: String, name: String = "", isExcluded: Bool = false, kind: ListKind = .domains) {
         self.url = url
         self.name = name
         self.isExcluded = isExcluded
+        self.kind = kind.rawValue
     }
+
+    var listKind: ListKind { ListKind(rawValue: kind) ?? .domains }
 
     var displayName: String {
         if !name.isEmpty { return name }
@@ -56,15 +63,15 @@ extension AppModel {
 
     /// Downloads a list and adds it when the download works. Returns why it
     /// did not, for the sheet to show; a list that never downloaded is not added.
-    func addSubscription(url: URL, name: String, excluded: Bool) async -> String? {
+    func addSubscription(url: URL, name: String, excluded: Bool, kind: ListKind = .domains) async -> String? {
         if subscriptions(excluded: excluded).contains(where: { $0.url == url.absoluteString }) {
             return String(localized: "This list is already in your subscriptions.")
         }
         do {
-            let domains = try await Self.download(url)
+            let domains = try await Self.download(url, kind: kind)
             let subscription = ListSubscription(url: url.absoluteString,
                                                 name: name.trimmingCharacters(in: .whitespacesAndNewlines),
-                                                isExcluded: excluded)
+                                                isExcluded: excluded, kind: kind)
             try Domains.fileContents(domains).write(to: Store.subscriptionURL(subscription.uuid), atomically: true, encoding: .utf8)
             subscription.domainCount = domains.count
             subscription.lastUpdated = .now
@@ -86,7 +93,7 @@ extension AppModel {
         updatingSubscriptions.insert(id)
         defer { updatingSubscriptions.remove(id) }
         let result: Result<[String], Error>
-        do { result = .success(try await Self.download(url)) } catch { result = .failure(error) }
+        do { result = .success(try await Self.download(url, kind: subscription.listKind)) } catch { result = .failure(error) }
         // Deleted while it downloaded: nothing to update.
         guard !subscription.isDeleted, subscription.modelContext != nil else { return }
         // A background refresh is not something to undo.
@@ -183,7 +190,7 @@ extension AppModel {
     private enum DownloadError: Error { case status(Int) }
 
     /// Reads a list from the web or a local file and cleans it, off the main thread.
-    private static func download(_ url: URL) async throws -> [String] {
+    private static func download(_ url: URL, kind: ListKind) async throws -> [String] {
         let data: Data
         if url.isFileURL {
             data = try await Task.detached { try Data(contentsOf: url) }.value
@@ -195,7 +202,7 @@ extension AppModel {
             }
             data = body
         }
-        return try await Task.detached { try SiteListSubscription.domains(from: data) }.value
+        return try await Task.detached { try SiteListSubscription.entries(from: data, kind: kind) }.value
     }
 
     private static func message(for error: Error) -> String {
@@ -204,6 +211,10 @@ extension AppModel {
         case SiteListSubscription.Failure.notText: String(localized: "This address is not a site list.")
         case SiteListSubscription.Failure.empty: String(localized: "The list has no sites in it.")
         case SiteListSubscription.Failure.tooLarge: String(localized: "The list is too large.")
+        case SiteListSubscription.Failure.onlyAddresses:
+            String(localized: "This list has IP addresses, not sites. Choose IP Addresses as its kind.")
+        case SiteListSubscription.Failure.onlyDomains:
+            String(localized: "This list has sites, not IP addresses. Choose Sites as its kind.")
         case is Gzip.Failure: String(localized: "The gzip file is damaged.")
         default: error.localizedDescription
         }
