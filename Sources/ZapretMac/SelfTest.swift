@@ -1,4 +1,5 @@
 import AppKit
+import JavaScriptCore
 import SwiftData
 import ZapretMacKit
 
@@ -227,12 +228,67 @@ enum SelfTest {
                   && Prefs.savedShortcut(in: model.prefs.defaults) == nil)
             BypassHUD.shared.hide()
 
+            // S-072
+            // My list + system proxy uses a PAC file served on 127.0.0.1. The
+            // system proxy itself is never applied here (useSystemProxy is off).
+            model.prefs.scope = .listOnly
+            check("my list uses PAC mode for the system proxy", model.proxyMode == .pac)
+            model.prefs.scope = .allSites
+            check("all sites uses SOCKS mode for the system proxy", model.proxyMode == .socks)
+            model.prefs.scope = .listOnly
+            check("the self-test never applies the system proxy", !model.proxy.isApplied)
+            if let pacURL = await model.servePAC() {
+                check("the PAC file is served on 127.0.0.1", pacURL.host == "127.0.0.1" && pacURL.path == PACFile.path, pacURL.absoluteString)
+                let socks = PACFile.proxy(port: model.prefs.port)
+                let first = await fetchPAC(pacURL)
+                check("the PAC file has its content type", first.type == PACFile.contentType, first.type)
+                check("the served PAC sends a listed site to SOCKS", route(first.body, "www.youtube.com") == socks,
+                      route(first.body, "www.youtube.com"))
+                check("the served PAC sends an unlisted site direct", route(first.body, "example.org") == "DIRECT")
+                check("the served PAC sends an excluded site direct", route(first.body, "www.apple.com") == "DIRECT")
+                var missing = pacURL
+                missing.deletePathExtension()
+                let notFound = await fetchPAC(missing.appendingPathExtension("txt"))
+                check("other paths are not found", notFound.status == 404, "\(notFound.status)")
+                model.addDomains(from: "example.org", excluded: false)
+                let second = await fetchPAC(pacURL)
+                check("a list change updates the served PAC", route(second.body, "example.org") == socks,
+                      route(second.body, "example.org"))
+                model.remove(model.domains(excluded: false).filter { $0.domain == "example.org" })
+                model.pacServer.stop()
+                let afterStop = await fetchPAC(pacURL)
+                check("stopping the PAC server stops serving", !model.pacServer.isRunning && afterStop.status == 0, "\(afterStop.status)")
+            } else {
+                check("the PAC server starts", false)
+            }
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 
             print(failures == 0 ? "SELFTEST PASS \(count) checks" : "SELFTEST FAIL \(failures) of \(count) checks")
             finish(code: failures == 0 ? 0 : 1)
         }
+    }
+
+    /// Fetches a URL with no proxy. Status 0 when nothing answers.
+    private static func fetchPAC(_ url: URL) async -> (status: Int, type: String, body: String) {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.connectionProxyDictionary = [:]
+        configuration.timeoutIntervalForRequest = 3
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        guard let (data, response) = try? await session.data(from: url), let http = response as? HTTPURLResponse else {
+            return (0, "", "")
+        }
+        return (http.statusCode, http.value(forHTTPHeaderField: "Content-Type") ?? "", String(decoding: data, as: UTF8.self))
+    }
+
+    /// Runs a PAC script's FindProxyForURL for a host in JavaScriptCore.
+    private static func route(_ script: String, _ host: String) -> String {
+        let context = JSContext()
+        context?.evaluateScript(script)
+        return context?.objectForKeyedSubscript("FindProxyForURL")?
+            .call(withArguments: ["https://\(host)/", host])?.toString() ?? "no result"
     }
 
     private static func check(_ name: String, _ ok: Bool, _ detail: String = "") {

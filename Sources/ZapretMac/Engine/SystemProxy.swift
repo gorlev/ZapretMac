@@ -2,14 +2,18 @@ import Foundation
 import Observation
 import ZapretMacKit
 
-/// Points the Mac's SOCKS proxy (System Settings > Network > Proxies) at
-/// tpws, and puts back what was there before. The previous settings are
-/// saved, so a crash or forced quit is undone on the next launch.
+/// Points the Mac's proxy settings (System Settings > Network > Proxies) at
+/// tpws: the SOCKS proxy for every site, or an automatic proxy
+/// configuration (PAC) for only the listed ones. Puts back what was there
+/// before. The previous settings are saved, so a crash or forced quit is
+/// undone on the next launch.
 @Observable
 final class SystemProxy {
     private(set) var isApplied = false
     private(set) var isBusy = false
     private(set) var lastError: String?
+    /// The mode in use while applied.
+    private(set) var mode: ProxyMode?
 
     private let defaults: UserDefaults
     private let savedKey = "systemProxy.saved"
@@ -19,7 +23,7 @@ final class SystemProxy {
         isApplied = defaults.data(forKey: savedKey) != nil
     }
 
-    /// Previous SOCKS settings per network service, saved before applying.
+    /// Previous SOCKS and auto-proxy settings per network service, saved before applying.
     private var saved: [String: ProxyState]? {
         get { defaults.data(forKey: savedKey).flatMap { try? JSONDecoder().decode([String: ProxyState].self, from: $0) } }
         set {
@@ -31,7 +35,9 @@ final class SystemProxy {
         }
     }
 
-    func apply(port: Int) async {
+    /// SOCKS mode with no `pacURL`, PAC mode with one. Applying while
+    /// applied switches the mode and keeps the settings saved the first time.
+    func apply(port: Int, pacURL: URL? = nil) async {
         isBusy = true
         defer { isBusy = false }
         lastError = nil
@@ -47,17 +53,17 @@ final class SystemProxy {
             }
             saved = previous
         }
-        var commands: [[String]] = []
-        for service in services {
-            commands.append(["-setsocksfirewallproxy", service, "127.0.0.1", String(port)])
-            commands.append(["-setsocksfirewallproxystate", service, "on"])
-        }
+        let newMode: ProxyMode = pacURL == nil ? .socks : .pac
+        let commands = ProxyCommands.apply(services: services, mode: newMode, port: port, pacURL: pacURL?.absoluteString)
         if let error = await Self.runAll(commands) {
             lastError = error
-            saved = nil
-            isApplied = false
+            if !isApplied {
+                saved = nil
+                mode = nil
+            }
         } else {
             isApplied = true
+            mode = newMode
         }
     }
 
@@ -65,33 +71,22 @@ final class SystemProxy {
         guard let previous = saved else { isApplied = false; return }
         isBusy = true
         defer { isBusy = false }
-        if let error = await Self.runAll(Self.restoreCommands(previous)) {
+        if let error = await Self.runAll(ProxyCommands.restore(previous)) {
             lastError = error
         } else {
             saved = nil
             isApplied = false
+            mode = nil
         }
     }
 
     /// At quit: blocks until the proxy is back, without an admin prompt.
     func restoreNow() {
         guard let previous = saved else { return }
-        for command in Self.restoreCommands(previous) { _ = Self.networksetup(command) }
+        for command in ProxyCommands.restore(previous) { _ = Self.networksetup(command) }
         saved = nil
         isApplied = false
-    }
-
-    private static func restoreCommands(_ previous: [String: ProxyState]) -> [[String]] {
-        var commands: [[String]] = []
-        for (service, state) in previous.sorted(by: { $0.key < $1.key }) {
-            if state.enabled, !state.server.isEmpty {
-                commands.append(["-setsocksfirewallproxy", service, state.server, String(state.port)])
-                commands.append(["-setsocksfirewallproxystate", service, "on"])
-            } else {
-                commands.append(["-setsocksfirewallproxystate", service, "off"])
-            }
-        }
-        return commands
+        mode = nil
     }
 
     // MARK: - networksetup
@@ -102,8 +97,10 @@ final class SystemProxy {
 
     nonisolated static func state(of service: String) async -> ProxyState {
         await Task.detached {
-            ProxyState(networksetupOutput: networksetup(["-getsocksfirewallproxy", service]).output)
+            var state = ProxyState(networksetupOutput: networksetup(["-getsocksfirewallproxy", service]).output)
                 ?? ProxyState(enabled: false, server: "", port: 0)
+            state.readAutoProxy(networksetup(["-getautoproxyurl", service]).output)
+            return state
         }.value
     }
 

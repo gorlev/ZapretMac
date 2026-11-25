@@ -79,7 +79,9 @@ private struct Hero: View {
             String(localized: "Starting tpws on port \(String(model.prefs.port)).")
         case .running:
             model.prefs.useSystemProxy && model.proxy.isApplied
-                ? String(localized: "Every app that uses the system proxy now goes through \(model.activeStrategy.name).")
+                ? (model.proxyMode == .pac
+                    ? String(localized: "The sites in your list now go through \(model.activeStrategy.name); other sites connect directly.")
+                    : String(localized: "Every app that uses the system proxy now goes through \(model.activeStrategy.name)."))
                 : String(localized: "SOCKS5 proxy ready at 127.0.0.1:\(String(model.prefs.port)). Point your browser at it.")
         case .failed(let message):
             message
@@ -223,7 +225,9 @@ private struct SetupCard: View {
             }
             Divider().padding(.leading, 48)
             CardRow(title: "System proxy", symbol: "point.3.connected.trianglepath.dotted",
-                    caption: String(localized: "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.")) {
+                    caption: prefs.useSystemProxy && model.proxyMode == .pac
+                        ? String(localized: "Only the sites in your list go through ZapretMac; others connect directly.")
+                        : String(localized: "Sends Safari, Chrome, and other apps through ZapretMac. Turned back when it stops.")) {
                 Toggle("System proxy", isOn: Binding(get: { prefs.useSystemProxy },
                                                     set: { prefs.useSystemProxy = $0; model.systemProxyChanged() }))
                     .toggleStyle(.switch)

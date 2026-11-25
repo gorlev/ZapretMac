@@ -87,6 +87,8 @@ final class AppModel {
     let engine = Engine()
     let prefs = Prefs.shared
     let proxy: SystemProxy
+    /// Serves the PAC file while the system proxy is in PAC mode (S-072).
+    let pacServer = PACServer()
     let finder = StrategyFinder()
     var showFinder = false
     /// Quick tries the strategies; Thorough runs blockcheck's tpws matrix.
@@ -112,7 +114,7 @@ final class AppModel {
         engine.onFailure = { [weak self] reason in
             guard let self else { return }
             // Nothing listens on the port now: give apps their old proxy back.
-            if proxy.isApplied { Task { await self.proxy.restore() } }
+            if proxy.isApplied || pacServer.isRunning { Task { await self.releaseProxy() } }
             if !Store.isOverridden { Notifier.post(title: String(localized: "ZapretMac stopped"), body: reason) }
         }
     }
@@ -309,25 +311,26 @@ final class AppModel {
         writeLists()
         engine.start(command)
         if prefs.useSystemProxy, !proxy.isApplied {
-            Task { await proxy.apply(port: prefs.port) }
+            Task { await applyProxy() }
         }
     }
 
     func turnOff() {
         engine.stop()
-        if proxy.isApplied { Task { await proxy.restore() } }
+        if proxy.isApplied || pacServer.isRunning { Task { await releaseProxy() } }
     }
 
     func restartIfRunning() {
         guard engine.isOn else { return }
         writeLists()
         engine.start(command)
+        proxyInputsChanged()
     }
 
     func systemProxyChanged() {
         guard engine.isOn else { return }
         Task {
-            if prefs.useSystemProxy { await proxy.apply(port: prefs.port) } else { await proxy.restore() }
+            if prefs.useSystemProxy { await applyProxy() } else { await releaseProxy() }
         }
     }
 
@@ -337,9 +340,55 @@ final class AppModel {
         if proxy.isApplied {
             Task {
                 await proxy.restore()
-                await proxy.apply(port: prefs.port)
+                await applyProxy()
             }
         }
+    }
+
+    // MARK: - System proxy mode (S-072)
+
+    /// My list sends only the listed sites through the system proxy, with a
+    /// PAC file; All sites sends everything to the SOCKS proxy.
+    var proxyMode: ProxyMode { prefs.scope == .listOnly ? .pac : .socks }
+
+    /// The PAC script for the enabled lists and the current port.
+    func pacScript() -> String {
+        PACFile.script(include: domains(excluded: false).filter(\.isEnabled).map(\.domain),
+                       exclude: domains(excluded: true).filter(\.isEnabled).map(\.domain),
+                       port: prefs.port)
+    }
+
+    /// Starts the PAC server (or gives it the current lists) and returns
+    /// the PAC file's address.
+    func servePAC() async -> URL? {
+        await pacServer.start(preferredPort: prefs.port + 1, script: pacScript())
+    }
+
+    /// Applies the system proxy in the mode the Sites choice asks for.
+    private func applyProxy() async {
+        switch proxyMode {
+        case .socks:
+            await proxy.apply(port: prefs.port)
+            if proxy.mode == .socks { pacServer.stop() }
+        case .pac:
+            // No port for the PAC file: every site goes to SOCKS rather than none.
+            guard let url = await servePAC() else { await proxy.apply(port: prefs.port); return }
+            await proxy.apply(port: prefs.port, pacURL: url)
+        }
+    }
+
+    /// Puts the old proxy settings back, then stops serving the PAC file.
+    private func releaseProxy() async {
+        await proxy.restore()
+        if !proxy.isApplied { pacServer.stop() }
+    }
+
+    /// The lists, the port, or the Sites choice changed while on: serve the
+    /// new PAC file, and switch between SOCKS and PAC mode when needed.
+    private func proxyInputsChanged() {
+        if pacServer.isRunning { pacServer.update(pacScript()) }
+        guard proxy.isApplied, proxy.mode != proxyMode else { return }
+        Task { await applyProxy() }
     }
 
     /// At launch: put back a proxy left pointing at a dead tpws by a crash.
