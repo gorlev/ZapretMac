@@ -29,10 +29,44 @@ public struct TPWSCommand: Equatable, Sendable {
     /// SOCKS mode only: the helper tracks its own tpws.
     public var pidFile: String?
     public var mode: Mode
+    /// S-100: tpws adds sites whose connections fail to this file by itself.
+    public var autoHostlist: AutoHostlist?
+
+    /// tpws `--hostlist-auto`: a site that fails `failThreshold` times within
+    /// `failTime` seconds is appended to the file, and the bypass then acts on it.
+    public struct AutoHostlist: Equatable, Sendable {
+        public var path: String
+        public var failThreshold: Int
+        public var failTime: Int
+
+        public static let defaultFailThreshold = 3
+        public static let defaultFailTime = 60
+
+        public init(path: String, failThreshold: Int = Self.defaultFailThreshold, failTime: Int = Self.defaultFailTime) {
+            self.path = path
+            self.failThreshold = failThreshold
+            self.failTime = failTime
+        }
+
+        var arguments: [String] {
+            ["--hostlist-auto=\(path)", "--hostlist-auto-fail-threshold=\(failThreshold)",
+             "--hostlist-auto-fail-time=\(failTime)"]
+        }
+    }
+
+    /// Whether tpws gets `--hostlist-auto`. In tpws the auto file is also an
+    /// include list, and tpws only watches sites it leaves alone: with All
+    /// sites there is nothing to learn, and the option would narrow the bypass
+    /// to the learned sites. So only with My list, which it extends. Never in
+    /// Transparent mode: tpws runs as root there and would write the file as root
+    /// (the helper refuses the flag).
+    public var usesAutoHostlist: Bool {
+        autoHostlist != nil && scope == .listOnly && mode == .socks
+    }
 
     public init(port: Int, strategy: [String], scope: Scope,
                 hostlistPath: String? = nil, excludePath: String? = nil, debug: Bool = true,
-                pidFile: String? = nil, mode: Mode = .socks) {
+                pidFile: String? = nil, mode: Mode = .socks, autoHostlist: AutoHostlist? = nil) {
         self.port = port
         self.strategy = strategy
         self.scope = scope
@@ -41,6 +75,7 @@ public struct TPWSCommand: Equatable, Sendable {
         self.debug = debug
         self.pidFile = pidFile
         self.mode = mode
+        self.autoHostlist = autoHostlist
     }
 
     /// In Transparent mode: only strategy, list, and debug flags, which is
@@ -54,6 +89,7 @@ public struct TPWSCommand: Equatable, Sendable {
         // every profile gets them, so My list and Never Touch apply to all.
         var lists: [String] = []
         if scope == .listOnly, let hostlistPath { lists.append("--hostlist=\(hostlistPath)") }
+        if usesAutoHostlist, let autoHostlist { lists += autoHostlist.arguments }
         if let excludePath { lists.append("--hostlist-exclude=\(excludePath)") }
         let profiles = StrategyProfiles.split(strategy).map { lists + $0 }
         out.append(contentsOf: StrategyProfiles.join(profiles))

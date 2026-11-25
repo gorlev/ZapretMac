@@ -375,6 +375,13 @@ enum SelfTest {
             // runs as root, pf is never touched, and the system proxy stays off.
             await checkTransparentMode(model: model)
 
+            // S-100
+            // tpws refuses SOCKS connections to this Mac's own addresses, so a
+            // local server that resets cannot be reached through it without
+            // changing the system. Instead: tpws runs with the options, and lines
+            // written into the automatic file stand in for the sites tpws adds.
+            await checkAutoHostlist(model: model)
+
             model.turnOff()
             check("turning off stops tpws", model.engine.state == .stopped)
 
@@ -471,6 +478,109 @@ enum SelfTest {
         check("the notice shows once", model.transparentNotice == nil)
         model.turnOn()
         await waitRunning()
+    }
+
+    /// S-100: the automatic site list: tpws options, reading the file, and the
+    /// move, delete, and clear actions with Undo.
+    private static func checkAutoHostlist(model: AppModel) async {
+        @MainActor func waitRunning() async {
+            try? await Task.sleep(for: .milliseconds(200))
+            for _ in 0..<80 where model.engine.state != .running { try? await Task.sleep(for: .milliseconds(100)) }
+        }
+        func file(_ url: URL) -> String { (try? String(contentsOf: url, encoding: .utf8)) ?? "" }
+        func hasAutoFlag(_ arguments: [String]) -> Bool { arguments.contains { $0.hasPrefix("--hostlist-auto") } }
+        let autoURL = Store.autoHostlistURL
+        let autoFlag = "--hostlist-auto=\(autoURL.path)"
+        let folders = HelperArguments.allowedFolders(home: NSHomeDirectory())
+
+        check("adding sites automatically is off at first",
+              !model.prefs.autoHostlist && !hasAutoFlag(model.command.arguments) && !model.prefs.transparentMode)
+        model.prefs.scope = .listOnly
+        model.restartIfRunning()
+        await waitRunning()
+        let pidBefore = model.engine.pid
+        model.setAutoHostlist(true)
+        await waitRunning()
+        let arguments = model.command.arguments
+        let profiles = StrategyProfiles.split(model.activeStrategy.arguments).count
+        check("with the option on, every profile gets the automatic list with threshold and time",
+              arguments.filter { $0 == autoFlag }.count == profiles
+              && arguments.filter { $0 == "--hostlist-auto-fail-threshold=3" }.count == profiles
+              && arguments.filter { $0 == "--hostlist-auto-fail-time=60" }.count == profiles, "\(profiles) profiles: \(arguments)")
+        check("tpws runs with the automatic list", model.engine.state == .running && model.engine.pid != pidBefore
+              && model.engine.commandLine.contains(autoFlag), "\(model.engine.state) \(model.engine.commandLine)")
+        check("tpws creates the automatic file", FileManager.default.fileExists(atPath: autoURL.path))
+        model.prefs.scope = .allSites
+        check("All sites leaves the automatic list out", !hasAutoFlag(model.command.arguments))
+        model.prefs.scope = .listOnly
+        // Only the preference: nothing starts through the helper here.
+        model.prefs.transparentMode = true
+        let transparent = model.command.arguments
+        check("Transparent mode leaves the automatic list out, and the helper accepts the rest",
+              !hasAutoFlag(transparent) && !model.autoHostlistAvailable
+              && HelperArguments.problem(in: transparent, allowedFolders: folders) == nil, "\(transparent)")
+        model.prefs.transparentMode = false
+
+        // Lines as tpws appends them.
+        let samples = ["blocked-one.auto.example", "blocked-two.auto.example", "blocked-three.auto.example"]
+        try? (samples.joined(separator: "\n") + "\n").write(to: autoURL, atomically: false, encoding: .utf8)
+        model.reloadAutoSites()
+        check("the app reads the sites tpws added", model.autoSites == samples && model.showsAutoSites, "\(model.autoSites)")
+        if let handle = try? FileHandle(forWritingTo: autoURL) {
+            handle.seekToEndOfFile()
+            handle.write(Data("Late.Auto.Example\n".utf8))
+            try? handle.close()
+        }
+        model.reloadAutoSites()
+        check("a site tpws appends later shows up", model.autoSites == samples + ["late.auto.example"], "\(model.autoSites)")
+
+        func inList(_ site: String, excluded: Bool) -> Bool { model.domains(excluded: excluded).contains { $0.domain == site } }
+
+        // Moves go through the same SwiftData path as adding sites (its Undo
+        // is the window's). A private UndoManager with SwiftData stalls here.
+        model.moveAutoSites([samples[0]], excluded: false)
+        check("Move to My List puts the site in My list and the hostlist file",
+              inList(samples[0], excluded: false) && file(Store.hostlistURL).contains(samples[0] + "\n"))
+        check("a moved site leaves the automatic list", !model.autoSites.contains(samples[0]) && !file(autoURL).contains(samples[0]))
+        model.moveAutoSites([samples[1]], excluded: true)
+        check("Move to Never Touch puts the site in Never Touch and the exclude file",
+              inList(samples[1], excluded: true) && file(Store.excludeURL).contains(samples[1] + "\n")
+              && !model.autoSites.contains(samples[1]))
+        await waitRunning()
+        check("tpws keeps running after a move", model.engine.state == .running, "\(model.engine.state)")
+
+        // Delete and Clear All change only the file: Undo as Edit > Undo does
+        // it, one group per action, on a private UndoManager.
+        let context = model.container.mainContext
+        let savedUndo = context.undoManager
+        let undo = UndoManager()
+        undo.groupsByEvent = false
+        context.undoManager = undo
+        func step(_ action: () -> Void) {
+            undo.beginUndoGrouping()
+            action()
+            undo.endUndoGrouping()
+        }
+        step { model.deleteAutoSites([samples[2]]) }
+        check("Delete takes a site out of the automatic file", !model.autoSites.contains(samples[2]) && !file(autoURL).contains(samples[2]))
+        undo.undo()
+        check("Undo brings a deleted site back", model.autoSites.contains(samples[2]), "\(model.autoSites)")
+
+        let before = model.autoSites
+        step { model.clearAutoSites() }
+        check("Clear All empties the automatic list", model.autoSites.isEmpty && file(autoURL).isEmpty && model.showsAutoSites)
+        undo.undo()
+        check("Undo brings every cleared site back", model.autoSites == before, "\(model.autoSites)")
+        undo.redo()
+        check("Redo clears them again", model.autoSites.isEmpty)
+        context.undoManager = savedUndo
+
+        model.remove((model.domains(excluded: false) + model.domains(excluded: true)).filter { samples.contains($0.domain) })
+        model.setAutoHostlist(false)
+        await waitRunning()
+        check("with the option off, tpws runs without the automatic list",
+              model.engine.state == .running && !model.engine.commandLine.contains("--hostlist-auto"), model.engine.commandLine)
+        check("the section hides when the option is off and the list is empty", !model.showsAutoSites)
     }
 
     /// Runs an engine on a `FakeTPWSRunner` through start, output, a crash and
