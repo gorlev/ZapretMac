@@ -1,14 +1,54 @@
 {
-  "_skip": ["", "--mss=88", "1,midsld", "80,443", "discord.com", "sniext+1", "ZapretMac", "tpws"],
+  "_skip": [
+    "",
+    "--mss=88",
+    "1,midsld",
+    "80,443",
+    "discord.com",
+    "sniext+1",
+    "ZapretMac",
+    "tpws",
+    "--tamper-cutoff=n2",
+    "1024",
+    "hoSt"
+  ],
   "_plural": {
-    "%lld HTTP tricks": {"one": "1 HTTP trick", "other": "%lld HTTP tricks"},
-    "%lld lines": {"one": "1 line", "other": "%lld lines"},
-    "%lld sites": {"one": "1 site", "other": "%lld sites"},
-    "%lld strategies open %@.": {"one": "1 strategy opens %@.", "other": "%lld strategies open %@."},
-    "Add %lld Sites": {"one": "Add Site", "other": "Add Sites"},
-    "Added %lld sites.": {"one": "Added 1 site.", "other": "Added %lld sites."},
-    "Delete %lld Sites": {"one": "Delete Site", "other": "Delete Sites"},
-    "Only the %lld sites in your list.": {"one": "Only the one site in your list.", "other": "Only the %lld sites in your list."}
+    "%lld HTTP tricks": {
+      "one": "1 HTTP trick",
+      "other": "%lld HTTP tricks"
+    },
+    "%lld lines": {
+      "one": "1 line",
+      "other": "%lld lines"
+    },
+    "%lld sites": {
+      "one": "1 site",
+      "other": "%lld sites"
+    },
+    "%lld strategies open %@.": {
+      "one": "1 strategy opens %@.",
+      "other": "%lld strategies open %@."
+    },
+    "Add %lld Sites": {
+      "one": "Add Site",
+      "other": "Add Sites"
+    },
+    "Added %lld sites.": {
+      "one": "Added 1 site.",
+      "other": "Added %lld sites."
+    },
+    "Delete %lld Sites": {
+      "one": "Delete Site",
+      "other": "Delete Sites"
+    },
+    "Only the %lld sites in your list.": {
+      "one": "Only the one site in your list.",
+      "other": "Only the %lld sites in your list."
+    },
+    "%lld strategies open every site.": {
+      "one": "1 strategy opens every site.",
+      "other": "%lld strategies open every site."
+    }
   },
   "_note": {
     "Add %lld Sites": "Undo menu action name: Edit menu shows 'Undo <this>'. The number is never shown; forms only pick singular/plural.",
@@ -52,6 +92,23 @@
     "Check": "Button that opens a site with and without the bypass to compare.",
     "Address": "Text field label for a website address.",
     "Copy the lines shown. Hold for the tpws command": "Tooltip on a toolbar button with a menu: click copies the log lines; press and hold shows a menu.",
-    "Turn the bypass on (Command-B)": "Tooltip. Keep the shortcut in parentheses; write it the way Mac menus in your language name the key (Command / Befehl / Comando / Commande...). Same for every '(Command-…)' / '(Shift-Command-…)' tooltip."
+    "Turn the bypass on (Command-B)": "Tooltip. Keep the shortcut in parentheses; write it the way Mac menus in your language name the key (Command / Befehl / Comando / Commande...). Same for every '(Command-…)' / '(Shift-Command-…)' tooltip.",
+    "Quick": "Segmented control in Find a Strategy: try only the built-in and the user's strategies. One short word.",
+    "Thorough": "Segmented control in Find a Strategy: try blockcheck's whole list (39 tries). One short word.",
+    "Scan": "Accessibility label of the Quick/Thorough segmented control.",
+    "OOB": "Short label inside a generated strategy name, e.g. 'Split at 1 · OOB' (out-of-band byte). Keep it very short; OOB may stay as is.",
+    "Host case": "Short label inside a generated strategy name: the Host header written as 'host'.",
+    "Host spelled %@": "Short label inside a generated strategy name; %@ is the spelling, e.g. hoSt.",
+    "Host padding %@": "Short label inside a generated strategy name; %@ is a byte count, e.g. 1024.",
+    "%@ strategy": "Suggested name for a strategy saved from a scan; %@ is a site, e.g. discord.com.",
+    "%@: %@": "One site's result in a tooltip: site name, then the reason it failed.",
+    "%@: opens in %lld ms": "One site's result in a tooltip: site name opened in so many milliseconds.",
+    "Opened %lld of %lld": "Small text on a result row: how many of the tested sites opened, e.g. 'Opened 2 of 3'.",
+    "%lld of %lld tried…": "Progress line while strategies are tested, e.g. '12 of 39 tried…'.",
+    "Stopped after %lld of %lld.": "Footer after the user pressed Stop: how many tries finished out of all.",
+    "Save as Strategy…": "Small button on a working result row: open the strategy editor with this row's flags.",
+    "Also scan HTTP": "Footer button after an HTTPS scan: run the plain-HTTP tries on the same site.",
+    "Save HTTP + HTTPS Strategy…": "Footer button: save one strategy that uses the best HTTP try for port 80 and the best HTTPS try for port 443.",
+    "%@ only works on Linux. On a Mac it does nothing.": "Orange note in the strategy editor; %@ is a tpws flag like --mss."
   }
 }

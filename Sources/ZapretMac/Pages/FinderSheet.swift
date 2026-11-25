@@ -204,7 +204,7 @@ private struct TrialRow<Action: View>: View {
                 action()
             case .fails(let reason):
                 if trial.isPartial {
-                    Text("\(trial.openCount) of \(trial.sites.count) sites").foregroundStyle(.secondary).monospacedDigit()
+                    Text("Opened \(trial.openCount) of \(trial.sites.count)").foregroundStyle(.secondary).monospacedDigit()
                 } else {
                     Text(reason).foregroundStyle(.secondary).lineLimit(1)
                 }
