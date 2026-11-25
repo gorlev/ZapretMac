@@ -229,7 +229,7 @@ Acceptance:
 - [unit] With the option on, the tpws arguments carry `--hostlist-auto=` with the threshold and time in every profile; off, they do not.
 - [self] A local test server that resets connections for one host gets that host into the automatic list after the threshold, and the app shows it.
 - [snap] The Sites page shows the automatic section with its count and the actions.
-Status: todo
+Status: done
 
 ### S-101 Find out what kind of block it is
 As the user, when a site does not open, Find a Strategy (and the site check) first tells me whether the block is something ZapretMac can get around: the provider changes DNS answers, the site's IP address is blocked, or the filter reads the site name (DPI). For DNS blocking it suggests turning on encrypted DNS; for an IP block it says no strategy will help.
@@ -238,7 +238,7 @@ Acceptance:
 - [unit] The verdict logic maps (DNS differs, IP blocked, TLS reset with name) to the right message.
 - [self] With a fake resolver result that differs from DoH, the finder shows the DNS verdict before trying strategies.
 - [snap] The finder sheet shows a short verdict line with an icon above the results.
-Status: todo
+Status: done
 
 ### S-102 Try TLS 1.2 and 1.3, and retry flaky results
 As the user, Thorough scans try each strategy with TLS 1.2 and TLS 1.3 separately and can repeat each try, like blockcheck, so a DPI that treats the versions differently or answers unreliably does not give me a wrong winner.
@@ -246,7 +246,7 @@ Notes: blockcheck runs curl with `--tlsv1.2 --tls-max 1.2` and `--tlsv1.3`, and 
 Acceptance:
 - [unit] A try is "works" only if every repeat works; the result records the TLS version.
 - [self] A scan of example.com reports both versions per row.
-Status: todo
+Status: done
 
 ### S-103 Filter by IP address ranges
 As the user, I can add IP addresses and ranges (one per line, CIDR, v4 and v6), or subscribe to an IP list, for apps that connect by address instead of by name; the bypass acts on those addresses (and never on an excluded range).
@@ -256,7 +256,7 @@ Acceptance:
 - [self] An IP list reaches tpws as `--ipset=` in every profile and passes the helper's validator.
 - [snap] Sites shows an "IP addresses" section.
 Depends: S-070
-Status: todo
+Status: done
 
 ### S-104 Share the bypass with my other devices
 As the user, I turn on "Share with devices on this network" and my phone or TV can use the Mac as a SOCKS5 proxy at the address the app shows (with a QR code); it is off by default and only listens on the local network interface.
@@ -265,7 +265,7 @@ Acceptance:
 - [unit] With sharing on, the arguments add a LAN bind; off, only 127.0.0.1.
 - [manual] An iPhone on the same Wi-Fi opens a blocked site through the shown proxy address.
 - [snap] Settings shows the toggle, address, QR code, and the warning.
-Status: todo
+Status: done
 
 ### S-105 Transparent mode for IPv6 too
 As the user on an IPv6 network, Transparent mode also sends IPv6 web traffic through tpws, so no connection skips the bypass.
@@ -274,7 +274,7 @@ Acceptance:
 - [unit] PFRules produces both IPv4 and IPv6 lines; the helper's fixed arguments include the link-local bind.
 - [manual] On an IPv6 network, `curl -6` to a blocked site opens with Transparent mode on.
 Depends: S-081
-Status: todo
+Status: done
 
 ### S-106 One-click suggested site lists
 As the user, Add Subscription offers a short list of known community lists (for example zapret's antizapret and refilter sources) with one line on what each contains, so I do not have to find addresses myself.
@@ -283,7 +283,7 @@ Acceptance:
 - [unit] Every suggested entry has a name, description, URL, and kind (domains / IPs).
 - [snap] The Add Subscription sheet shows the suggestions; choosing one fills the address.
 Depends: S-070
-Status: todo
+Status: done
 
 ### S-107 The editor covers the remaining tpws options
 As the user, the strategy editor has controls for the tpws desync options it still lacks: the OOB byte value (`--oob-data`), disorder or OOB only for TLS or only for HTTP (`--disorder=tls`, `--oob=http`), protocol filter (`--filter-l7=http,tls`), and where tampering starts and stops (`--tamper-start`, `--tamper-cutoff`).
@@ -291,7 +291,7 @@ Acceptance:
 - [unit] StrategyOptions round-trips each option; existing strategies are unchanged.
 - [self] tpws accepts a strategy using all of them (dry run), and the helper's validator accepts them.
 - [snap] The editor shows them in its Advanced section.
-Status: todo
+Status: done
 
 ## Dropped
 - Accounts, sync, telemetry: a local tool for one person.

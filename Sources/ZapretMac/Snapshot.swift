@@ -202,6 +202,27 @@ enum Snapshot {
                 model.prefs.shareOnNetwork = sharing
                 NSApp.windows.first { $0.isVisible && $0 !== main && !$0.isSheet && $0.frame.width > 300 }?.close()
             }
+            // S-100: Sites with a few automatically added sites, seeded into the
+            // test store's automatic file. "autohostlist" runs this alone.
+            if only == nil || only?.contains("domains") == true || only?.contains("autohostlist") == true {
+                let scope = model.prefs.scope
+                let autoText = (try? String(contentsOf: Store.autoHostlistURL, encoding: .utf8)) ?? ""
+                try? "rutracker.org\nnnmclub.to\ninstagram.com\nlinkedin.com\n"
+                    .write(to: Store.autoHostlistURL, atomically: true, encoding: .utf8)
+                model.prefs.scope = .listOnly
+                model.prefs.autoHostlist = true
+                model.reloadAutoSites()
+                for mode in ["light", "dark"] {
+                    NSApp.appearance = NSAppearance(named: mode == "light" ? .aqua : .darkAqua)
+                    model.sidebar = .domains
+                    try? await Task.sleep(for: .seconds(0.8))
+                    capture(to: "\(dir)/domains-auto-\(mode).png")
+                }
+                try? autoText.write(to: Store.autoHostlistURL, atomically: true, encoding: .utf8)
+                model.prefs.autoHostlist = false
+                model.prefs.scope = scope
+                model.reloadAutoSites()
+            }
             // S-081: a fake helper shows as ready (nothing is installed or run as
             // root); Overview in Transparent mode, and Settings > Advanced with it on.
             if only == nil || only?.contains("overview") == true || only?.contains("settings") == true {

@@ -127,6 +127,8 @@ final class AppModel {
     var addSubscriptionSuggestion: SuggestedList?
     /// Subscriptions downloading now, by uuid: their rows show progress.
     var updatingSubscriptions = Set<UUID>()
+    /// S-100: the sites tpws added to `Store.autoHostlistURL`, as last read.
+    var autoSites: [String] = []
     /// Checks once an hour whether a subscription is a day old.
     @ObservationIgnored var subscriptionTimer: Timer?
     /// Settings reopens on the last tab. Test and snapshot runs leave it alone.
@@ -338,7 +340,8 @@ final class AppModel {
                            ipsetExcludePath: excludeAddresses ? Store.ipsetExcludeURL.path : nil,
                            debug: prefs.verboseLog, pidFile: Store.pidURL.path,
                            mode: prefs.transparentMode ? .transparent : .socks,
-                           shareAddress: sharedAddress?.ip)
+                           shareAddress: sharedAddress?.ip,
+                           autoHostlist: prefs.autoHostlist ? .init(path: Store.autoHostlistURL.path) : nil)
     }
 
     func toggle() {

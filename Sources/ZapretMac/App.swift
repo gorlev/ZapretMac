@@ -61,6 +61,13 @@ struct ZapretMacApp: App {
                     get: { model.prefs.useSystemProxy },
                     set: { model.prefs.useSystemProxy = $0; model.systemProxyChanged() }))
                     .disabled(model.prefs.transparentMode)
+                Toggle("Add Blocked Sites Automatically", isOn: Binding(
+                    get: { model.prefs.autoHostlist },
+                    set: { model.setAutoHostlist($0) }))
+                    .keyboardShortcut("a", modifiers: [.command, .option])
+                    .disabled(!model.autoHostlistAvailable)
+                Button("Clear Automatically Added Sites") { model.clearAutoSites() }
+                    .disabled(model.autoSites.isEmpty)
                 Divider()
                 Button("Copy tpws Command") {
                     NSPasteboard.general.clearContents()
@@ -164,6 +171,8 @@ enum Store {
     /// IP addresses and ranges for tpws `--ipset` and `--ipset-exclude` (S-103).
     static var ipsetURL: URL { directory.appending(path: "ipset.txt") }
     static var ipsetExcludeURL: URL { directory.appending(path: "ipset-exclude.txt") }
+    /// S-100: sites tpws added by itself (`--hostlist-auto`), written by tpws.
+    static var autoHostlistURL: URL { directory.appending(path: "hostlist-auto.txt") }
     static var pidURL: URL { directory.appending(path: "tpws.pid") }
     /// The cleaned domains of one subscribed list, one per line.
     static func subscriptionURL(_ id: UUID) -> URL {

@@ -20,6 +20,8 @@ struct DomainsPage: View {
     private var siteEntries: [DomainEntry] { entries.filter { !$0.isAddress } }
     private var addressEntries: [DomainEntry] { entries.filter(\.isAddress) }
     private var subscriptions: [ListSubscription] { allSubscriptions.filter { $0.isExcluded == showExcluded } }
+    /// S-100: the sites tpws added by itself, under Sites to Unblock only.
+    private var showsAuto: Bool { !showExcluded && model.showsAutoSites }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,10 +37,11 @@ struct DomainsPage: View {
                         }
                     }
                 }
+                if showsAuto { autoSection }
                 Section {
                     rows(siteEntries)
                 } header: {
-                    if !subscriptions.isEmpty || !addressEntries.isEmpty { Text("My List") }
+                    if !subscriptions.isEmpty || !addressEntries.isEmpty || showsAuto { Text("My List") }
                 }
                 if !addressEntries.isEmpty {
                     Section("IP Addresses") {
@@ -48,7 +51,7 @@ struct DomainsPage: View {
             }
             .onDeleteCommand(perform: deleteSelection)
             .overlay {
-                if entries.isEmpty && subscriptions.isEmpty {
+                if entries.isEmpty && subscriptions.isEmpty && !showsAuto {
                     ContentUnavailableView {
                         Label(showExcluded ? String(localized: "Nothing Excluded") : String(localized: "No Sites Yet"), systemImage: showExcluded ? "hand.raised" : "globe")
                     } description: {
@@ -81,6 +84,76 @@ struct DomainsPage: View {
             model.addSubscriptionExcluded = showExcluded
             if model.addSitesRequest > 0 { inputFocused = true }
         }
+        // tpws appends to the automatic list while the bypass runs: look at the
+        // file every two seconds while the page is open.
+        .task {
+            while !Task.isCancelled {
+                model.reloadAutoSites()
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
+    }
+
+    /// S-100: what tpws added by itself, with the actions to keep or drop each site.
+    @ViewBuilder private var autoSection: some View {
+        Section {
+            if model.autoSites.isEmpty {
+                Text("Nothing yet. A site appears here when its connections keep failing.")
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 2)
+            } else {
+                ForEach(model.autoSites, id: \.self) { site in
+                    AutoSiteRow(site: site)
+                        .contextMenu { autoMenu(site) }
+                }
+            }
+        } header: {
+            HStack(spacing: Space.sm) {
+                Text("Added Automatically")
+                Spacer()
+                Text("\(model.autoSites.count) sites")
+                    .monospacedDigit()
+                Button("Clear All") { model.clearAutoSites() }
+                    .buttonStyle(.link)
+                    .disabled(model.autoSites.isEmpty)
+                    .help("Remove every automatically added site. Undo with Command-Z")
+            }
+        }
+    }
+
+    @ViewBuilder private func autoMenu(_ site: String) -> some View {
+        Button("Move to My List") { model.moveAutoSites([site], excluded: false) }
+        Button("Move to Never Touch") { model.moveAutoSites([site], excluded: true) }
+        Divider()
+        Button("Delete", role: .destructive) { model.deleteAutoSites([site]) }
+    }
+
+    /// The switch for the automatic list and one line on what it does now.
+    private var autoToggle: some View {
+        HStack(spacing: Space.sm) {
+            Toggle("Add blocked sites automatically", isOn: Binding(get: { model.prefs.autoHostlist },
+                                                                     set: { model.setAutoHostlist($0) }))
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .disabled(!model.autoHostlistAvailable)
+            Text(autoNote)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+            if model.autoHostlistAvailable, model.prefs.autoHostlist, model.prefs.scope == .allSites {
+                Button("Use My List") { model.prefs.scope = .listOnly; model.restartIfRunning() }
+                    .buttonStyle(.link)
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.callout)
+    }
+
+    private var autoNote: String {
+        if !model.autoHostlistAvailable { return String(localized: "Not available in Transparent mode yet.") }
+        if model.prefs.scope == .allSites {
+            return String(localized: "Works with My list. All sites already changes every site, so there is nothing to add.")
+        }
+        return String(localized: "tpws adds a site after \(TPWSCommand.AutoHostlist.defaultFailThreshold) failed connections within a minute.")
     }
 
     @ViewBuilder private func rows(_ entries: [DomainEntry]) -> some View {
@@ -193,6 +266,7 @@ struct DomainsPage: View {
                 }
             }
             .font(.callout)
+            if !showExcluded { autoToggle }
         }
         .padding(.horizontal, Space.margin)
         .padding(.vertical, Space.md)
@@ -303,5 +377,39 @@ private struct SubscriptionRow: View {
             Text("Updated \(Text(date, format: .relative(presentation: .named)))")
                 .foregroundStyle(.secondary)
         }
+    }
+}
+
+/// A site tpws added to the automatic list (S-100), with a button to keep it
+/// in My list and a menu with the other actions.
+private struct AutoSiteRow: View {
+    @Environment(AppModel.self) private var model
+    let site: String
+
+    var body: some View {
+        HStack(spacing: Space.sm) {
+            Image(systemName: "wand.and.sparkles")
+                .foregroundStyle(Palette.accentText)
+                .frame(width: 20)
+            Text(site)
+            Spacer()
+            Button("Move to My List", systemImage: "plus.circle") { model.moveAutoSites([site], excluded: false) }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.borderless)
+                .help("Keep this site in My list")
+            Menu {
+                Button("Move to Never Touch") { model.moveAutoSites([site], excluded: true) }
+                Divider()
+                Button("Delete", role: .destructive) { model.deleteAutoSites([site]) }
+            } label: {
+                Label("More", systemImage: "ellipsis.circle")
+                    .labelStyle(.iconOnly)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("More actions for this site")
+        }
+        .padding(.vertical, 2)
     }
 }

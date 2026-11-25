@@ -21,6 +21,8 @@ final class Prefs {
     var transparentMode: Bool { didSet { defaults.set(transparentMode, forKey: "transparentMode") } }
     /// S-104: tpws also listens on the LAN address, so other devices can use it.
     var shareOnNetwork: Bool { didSet { defaults.set(shareOnNetwork, forKey: "shareOnNetwork") } }
+    /// S-100: tpws adds sites whose connections keep failing to the automatic list.
+    var autoHostlist: Bool { didSet { defaults.set(autoHostlist, forKey: "autoHostlist") } }
     var testURL: String { didSet { defaults.set(testURL, forKey: "testURL") } }
     /// The sites Find a Strategy tries, one per line or separated by spaces or commas.
     var finderSites: String { didSet { defaults.set(finderSites, forKey: "finderSites") } }
@@ -52,6 +54,7 @@ final class Prefs {
         verboseLog = (d.object(forKey: "verboseLog") as? Bool) ?? true
         transparentMode = d.bool(forKey: "transparentMode")
         shareOnNetwork = d.bool(forKey: "shareOnNetwork")
+        autoHostlist = d.bool(forKey: "autoHostlist")
         let testURL = d.string(forKey: "testURL") ?? "https://discord.com"
         self.testURL = testURL
         finderSites = d.string(forKey: "finderSites") ?? testURL
