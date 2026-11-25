@@ -97,6 +97,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate()
         guard let model = Self.model else { return }
+        // The self-test needs no window, so it runs even when macOS does not
+        // open one (a locked screen, restored state with no windows).
+        SelfTest.runIfRequested(model: model)
         model.recoverFromCrash()
         if model.prefs.startOnLaunch, !Store.isOverridden { model.turnOn() }
     }

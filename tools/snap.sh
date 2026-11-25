@@ -15,5 +15,5 @@ shots=/tmp/ZapretMac-shots${slot:+-slot$slot}${APP_LANG:+-$APP_LANG}
 rm -rf $store $store-shm $store-wal $store-files
 rm -rf $shots
 # English by default, so snapshots do not depend on this Mac's language.
-lang=(-AppleLanguages "(${APP_LANG:-en})" -AppleLocale "${APP_LANG:-en}")
+lang=(-AppleLanguages "(${APP_LANG:-en})" -AppleLocale "${APP_LANG:-en}" -ApplePersistenceIgnoreState YES)
 APP_STORE=$store APP_SEED=1 APP_SNAPSHOT=$shots $app $lang

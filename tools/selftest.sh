@@ -8,4 +8,4 @@ app=~/Applications/ZapretMac.app/Contents/MacOS/ZapretMac
 [[ -z "$slot" ]] && rm -rf ~/Library/Saved\ Application\ State/com.gorlev.zapretmac.savedState
 store=/tmp/ZapretMac-self${slot:+-$slot}.store
 rm -rf $store $store-shm $store-wal $store-files
-APP_STORE=$store $app --selftest -AppleLanguages "(en)" -AppleLocale en
+APP_STORE=$store $app --selftest -AppleLanguages "(en)" -AppleLocale en -ApplePersistenceIgnoreState YES

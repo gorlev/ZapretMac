@@ -11,3 +11,9 @@ Symptom: a site opened through tpws right after the switch turned on failed with
 Cause: the engine marked tpws running 600 ms after launch or on its "Running as" line, before the port took connections.
 Fix: the engine marks it running only once 127.0.0.1:<port> accepts a connection.
 Rule: "ready" means the thing answers, never that time passed or a log line appeared.
+
+## Self-tests hung with no output
+Symptom: every self-test run sat idle and printed nothing; the app's main thread waited for events.
+Cause: the self-test started from ContentView.task, which never runs when macOS opens no window (a locked screen does that).
+Fix: AppDelegate starts the self-test at launch; it needs no window. Snapshots still need an unlocked screen.
+Rule: test hooks that need no UI start from app launch, never from a view.
