@@ -143,6 +143,7 @@ enum Store {
 
     static var hostlistURL: URL { directory.appending(path: "hostlist.txt") }
     static var excludeURL: URL { directory.appending(path: "hostlist-exclude.txt") }
+    static var pidURL: URL { directory.appending(path: "tpws.pid") }
 
     static func makeContainer() -> ModelContainer {
         do {

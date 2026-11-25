@@ -17,3 +17,9 @@ Symptom: every self-test run sat idle and printed nothing; the app's main thread
 Cause: the self-test started from ContentView.task, which never runs when macOS opens no window (a locked screen does that).
 Fix: AppDelegate starts the self-test at launch; it needs no window. Snapshots still need an unlocked screen.
 Rule: test hooks that need no UI start from app launch, never from a view.
+
+## A force-quit left tpws holding the port
+Symptom: after ZapretMac was killed, the next start failed with "bind: Address already in use".
+Cause: tpws is a child process and keeps running when the app is killed.
+Fix: tpws writes a pid file; before starting, the engine stops a leftover process that is our tpws binary.
+Rule: every helper process the app starts can be found and stopped by the next launch.

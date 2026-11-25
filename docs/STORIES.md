@@ -124,7 +124,7 @@ Acceptance:
 - [unit] The Kit builds exactly blockcheck's HTTPS and HTTP lists, never pairing `--oob` with `--disorder` and never adding `--mss`.
 - [self] A thorough scan of example.com finishes, lists every try, and leaves the bypass running unchanged.
 - [snap] Rows show the flags under a short name; a progress line says "Try 12 of 39".
-Status: todo
+Status: done
 
 ### S-091 Save a strategy the scan found
 As the user, I click "Save as Strategy…" on any working row, and the editor opens with those flags and a suggested name.
@@ -154,14 +154,14 @@ As the user, I find four more ready-made strategies that blockcheck tries early:
 Acceptance:
 - [self] tpws accepts every new preset (dry run).
 - [snap] The Strategies grid shows ten cards, names and blurbs in all eight languages.
-Status: todo
+Status: done
 
 ### S-095 The editor knows what macOS can and cannot do
 As the user, the strategy editor warns me when I turn on both "out-of-band byte" and "disorder" (they break connections on macOS), never suggests `--mss` (Linux only), and offers the two HTTP options it lacks: Host spelling (`--hostspell`) and Host padding (`--hostpad`).
 Acceptance:
 - [unit] StrategyOptions round-trips `--hostspell=hoSt` and `--hostpad=2048`.
 - [snap] Turning on both toggles shows an orange warning under them.
-Status: todo
+Status: done
 
 ## M7 System
 

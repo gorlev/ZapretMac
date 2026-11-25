@@ -269,7 +269,7 @@ final class AppModel {
         return TPWSCommand(port: prefs.port, strategy: activeStrategy.arguments, scope: prefs.scope,
                            hostlistPath: Store.hostlistURL.path,
                            excludePath: exclude ? Store.excludeURL.path : nil,
-                           debug: prefs.verboseLog)
+                           debug: prefs.verboseLog, pidFile: Store.pidURL.path)
     }
 
     func toggle() {

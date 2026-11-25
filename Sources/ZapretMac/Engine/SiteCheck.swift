@@ -28,14 +28,26 @@ enum SiteCheck {
     static func run(_ url: URL, port: Int?) async -> Result {
         async let direct = fetch(url, socksPort: nil)
         if let port {
-            async let via = fetch(url, socksPort: port)
+            async let via = fetch(url, socksPort: port, retry: true)
             return await Result(direct: direct, throughZapret: via)
         }
         return await Result(direct: direct, throughZapret: nil)
     }
 
     /// `timeout` is how long to wait for an answer; the whole load gets 2 s more.
-    nonisolated static func fetch(_ url: URL, socksPort: Int?, timeout: TimeInterval = 8) async -> Outcome {
+    /// Through the proxy, a "proxy could not connect" answer is tried once more:
+    /// tpws reports it when its own lookup or connection to the site was slow.
+    /// Only the site check retries; for a strategy trial a failure is the answer.
+    nonisolated static func fetch(_ url: URL, socksPort: Int?, timeout: TimeInterval = 8, retry: Bool = false) async -> Outcome {
+        let first = await fetchOnce(url, socksPort: socksPort, timeout: timeout)
+        guard retry, socksPort != nil, case .failed(let reason) = first, reason == proxyFailure else { return first }
+        try? await Task.sleep(for: .milliseconds(300))
+        return await fetchOnce(url, socksPort: socksPort, timeout: timeout)
+    }
+
+    nonisolated private static var proxyFailure: String { String(localized: "Could not connect") }
+
+    nonisolated private static func fetchOnce(_ url: URL, socksPort: Int?, timeout: TimeInterval) async -> Outcome {
         let config = URLSessionConfiguration.ephemeral
         config.timeoutIntervalForRequest = timeout
         config.timeoutIntervalForResource = timeout + 2
@@ -61,6 +73,9 @@ enum SiteCheck {
             return .ok(status: (response as? HTTPURLResponse)?.statusCode ?? 0, milliseconds: ms)
         } catch let error as URLError {
             return .failed(describe(error))
+        } catch let error as NSError where error.domain == kCFErrorDomainCFNetwork as String {
+            // 306 / 310: the (SOCKS) proxy could not reach the site.
+            return .failed([306, 310].contains(error.code) ? proxyFailure : error.localizedDescription)
         } catch {
             return .failed(error.localizedDescription)
         }

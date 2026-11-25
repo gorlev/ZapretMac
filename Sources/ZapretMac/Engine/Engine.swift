@@ -46,6 +46,7 @@ final class Engine {
 
     func start(_ command: TPWSCommand) {
         stop()
+        if let pidFile = command.pidFile { Self.stopLeftover(pidFile: pidFile) }
         guard Self.binaryExists else {
             state = .failed(String(localized: "tpws is missing from the app. Rebuild it with ./build.sh."))
             return
@@ -111,6 +112,20 @@ final class Engine {
         process = nil
         startedAt = nil
         state = .stopped
+    }
+
+    /// A tpws from an earlier run that was force-quit keeps the port busy.
+    /// Its pid file names it; stop it if that process is still our tpws.
+    static func stopLeftover(pidFile: String) {
+        guard let text = try? String(contentsOfFile: pidFile, encoding: .utf8),
+              let pid = Int32(text.trimmingCharacters(in: .whitespacesAndNewlines)), pid > 1 else { return }
+        var path = [CChar](repeating: 0, count: 4096)
+        guard proc_pidpath(pid, &path, UInt32(path.count)) > 0,
+              String(decoding: path.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self) == binaryURL.path else { return }
+        kill(pid, SIGTERM)
+        for _ in 0..<50 where kill(pid, 0) == 0 { usleep(20_000) }
+        if kill(pid, 0) == 0 { kill(pid, SIGKILL) }
+        try? FileManager.default.removeItem(atPath: pidFile)
     }
 
     func clearLog() {
