@@ -7,6 +7,7 @@
 #        ./build.sh --debug    debug build, install
 #        ./build.sh --open     install, then quit the running copy and open the new one
 #        ./build.sh --universal  Apple silicon and Intel in one app (for downloads)
+#        ./build.sh --arch arm64 | --arch x86_64   one architecture only (smaller downloads)
 set -euo pipefail
 here=${0:A:h}
 name="ZapretMac"
@@ -16,9 +17,15 @@ slot="${ZM_SLOT:-}"
 scratch="$HOME/Library/Developer/$name/build${slot:+-$slot}"
 config=release
 [[ " $* " == *" --debug "* ]] && config=debug
-universal=""
-[[ " $* " == *" --universal "* ]] && universal=1
-[[ -n "$universal" ]] && scratch="$scratch-universal"
+# Architectures for a download build; empty builds for this Mac only.
+archs=()
+[[ " $* " == *" --universal "* ]] && archs=(arm64 x86_64)
+args=("$@")
+for (( i = 1; i <= ${#args}; i++ )); do
+  [[ "${args[i]}" == --arch ]] && archs=("${args[i+1]}")
+done
+for a in $archs; do [[ $a == arm64 || $a == x86_64 ]] || { echo "unknown architecture: $a (use arm64 or x86_64)"; exit 1; }; done
+(( ${#archs} )) && scratch="$scratch-${(j:-:)archs}"
 
 # Sign with your Apple Development certificate when you have one (Xcode >
 # Settings > Accounts). Otherwise sign ad hoc, which is fine for your own Mac.
@@ -28,9 +35,10 @@ if [[ -z "$identity" ]]; then
 fi
 [[ -n "$identity" ]] || identity=-
 
-if [[ -n "$universal" ]]; then
+if (( ${#archs} )); then
   # The x86_64 note is Apple's reminder that Intel support is ending; the build is fine.
-  swift build -c $config --arch arm64 --arch x86_64 --package-path "$here" --scratch-path "$scratch" 2>&1 \
+  archflags=(); for a in $archs; do archflags+=(--arch $a); done
+  swift build -c $config $archflags --package-path "$here" --scratch-path "$scratch" 2>&1 \
     | grep -E "error|warning|Build complete" | grep -v "^\[" | grep -v "x86_64 architecture is deprecated" || true
   products="$scratch/out/Products/${(C)config}"
 else
@@ -70,6 +78,8 @@ cp "$bin" "$app/Contents/MacOS/$name"
 cp "$helper" "$app/Contents/MacOS/${name}Helper"
 cp "$here/LaunchDaemon.plist" "$app/Contents/Library/LaunchDaemons/com.gorlev.zapretmac.helper.plist"
 cp "$tpws_dir/tpws" "$app/Contents/Helpers/tpws"
+# tpws is universal; a one-architecture build keeps only its slice.
+(( ${#archs} == 1 )) && lipo -thin "$archs[1]" "$tpws_dir/tpws" -output "$app/Contents/Helpers/tpws"
 # Release builds drop debug symbols: they hold the absolute paths of the
 # source and build folders (your home folder, so your user name).
 if [[ $config == release ]]; then

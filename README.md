@@ -117,7 +117,12 @@ There are two ways to get ZapretMac. Both need **macOS 26** (Tahoe) or later, on
 
 ### Option 1: Download the app
 
-1. Download `ZapretMac.zip` from the [latest release](https://github.com/gorlev/ZapretMac/releases/latest) and unzip it.
+1. Download the file for your Mac from the [latest release](https://github.com/gorlev/ZapretMac/releases/latest) and unzip it:
+   - `ZapretMac-AppleSilicon.zip` for Macs with an M1 chip or later,
+   - `ZapretMac-Intel.zip` for Macs with an Intel processor,
+   - or `ZapretMac.zip`, one larger app that runs on both.
+
+   Not sure which you have? Open the Apple menu → **About This Mac** and look at *Chip* or *Processor*.
 2. Move `ZapretMac.app` to your Applications folder.
 3. Open it. macOS says it cannot verify the developer: click **Done**, open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to ZapretMac.
 
@@ -147,7 +152,7 @@ cd ZapretMac
 4. signs everything with your Apple Development certificate (ad hoc if you have none),
 5. and installs `~/Applications/ZapretMac.app`.
 
-`--open` restarts the app with the new build. Build products stay in `~/Library/Developer/ZapretMac`, outside the repository. Release builds carry no debug symbols or local folder paths; `SIGN_IDENTITY=- ./build.sh` builds an ad hoc copy like the downloadable one.
+`--open` restarts the app with the new build. Build products stay in `~/Library/Developer/ZapretMac`, outside the repository. Release builds carry no debug symbols or local folder paths; `SIGN_IDENTITY=- ./build.sh` builds an ad hoc copy like the downloadable one; add `--arch arm64`, `--arch x86_64`, or `--universal` to choose the architecture.
 
 ## Getting started
 
