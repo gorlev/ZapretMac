@@ -38,6 +38,9 @@ One switch, ready-made strategies, site lists, and a strategy finder, in a Swift
 - [Contributing](#contributing)
 - [Acknowledgements and license](#acknowledgements-and-license)
 
+> [!TIP]
+> On an iPhone or iPad? **[Zapret for iOS](https://github.com/gorlev/Zapret-iOS)** is the same app for iOS, running `tpws` as a local VPN, with a Control Center switch, a widget, and Shortcuts. Both share the strategies, site lists, Find a Strategy, and translations.
+
 ## What it does
 
 Some networks block websites with deep packet inspection (DPI): a filter reads the site name in the first packets of a connection and drops or resets it. zapret's `tpws` gets past many of these filters by splitting and reshaping those first packets, so the filter can no longer read the name. The website itself sees a normal connection.
@@ -231,6 +234,8 @@ The translations were written to read naturally in each language rather than wor
 Bug reports, strategy reports, translations, and code are all welcome. Questions go in [Discussions](https://github.com/gorlev/ZapretMac/discussions), bugs and ideas in [Issues](https://github.com/gorlev/ZapretMac/issues/new/choose), and security problems through a [private report](SECURITY.md). Before opening a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md): it lists the checks to run and how translations work.
 
 ## Acknowledgements and license
+
+ZapretMac has an iPhone and iPad sibling, **[Zapret for iOS](https://github.com/gorlev/Zapret-iOS)**.
 
 ZapretMac is a graphical front end for **[zapret](https://github.com/bol-van/zapret)** by **bol-van**. All of the actual bypass work is done by zapret's `tpws`. ZapretMac is not affiliated with the zapret project.
 
